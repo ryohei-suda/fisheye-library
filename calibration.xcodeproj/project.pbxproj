@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		DE46DB64191243A2003122A9 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DE46DB63191243A2003122A9 /* main.cpp */; };
 		DE46DB66191243A2003122A9 /* calibration.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = DE46DB65191243A2003122A9 /* calibration.1 */; };
+		DE46DB701912492B003122A9 /* IncidentVector.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DE46DB6F1912492B003122A9 /* IncidentVector.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -28,6 +29,8 @@
 		DE46DB60191243A2003122A9 /* calibration */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = calibration; sourceTree = BUILT_PRODUCTS_DIR; };
 		DE46DB63191243A2003122A9 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		DE46DB65191243A2003122A9 /* calibration.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = calibration.1; sourceTree = "<group>"; };
+		DE46DB6F1912492B003122A9 /* IncidentVector.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = IncidentVector.cpp; sourceTree = "<group>"; };
+		DE46DB7119124934003122A9 /* IncidentVector.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IncidentVector.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -60,6 +63,8 @@
 		DE46DB62191243A2003122A9 /* calibration */ = {
 			isa = PBXGroup;
 			children = (
+				DE46DB7119124934003122A9 /* IncidentVector.h */,
+				DE46DB6F1912492B003122A9 /* IncidentVector.cpp */,
 				DE46DB63191243A2003122A9 /* main.cpp */,
 				DE46DB65191243A2003122A9 /* calibration.1 */,
 			);
@@ -117,6 +122,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DE46DB701912492B003122A9 /* IncidentVector.cpp in Sources */,
 				DE46DB64191243A2003122A9 /* main.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -227,6 +233,7 @@
 				DE46DB6B191243A2003122A9 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
