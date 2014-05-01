@@ -1,0 +1,17 @@
+##
+## Xcode projects .gitignore files.
+##
+.DS_Store
+
+##
+## Xcode Project
+##
+**/*.xcodeproj/*
+!**/*.xcodeproj/project.pbxproj
+!**/*.xcodeproj/default.*
+
+##
+## Xcode Workspace
+##
+*.xcworkspace/*
+!*.xcworkspace/contents.xcworkspacedata
