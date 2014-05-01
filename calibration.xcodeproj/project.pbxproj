@@ -10,7 +10,21 @@
 		DE46DB64191243A2003122A9 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DE46DB63191243A2003122A9 /* main.cpp */; };
 		DE46DB66191243A2003122A9 /* calibration.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = DE46DB65191243A2003122A9 /* calibration.1 */; };
 		DE46DB701912492B003122A9 /* IncidentVector.cpp in Sources */ = {isa = PBXBuildFile; fileRef = DE46DB6F1912492B003122A9 /* IncidentVector.cpp */; };
+		DE46DB7419124F80003122A9 /* libopencv_core.2.4.8.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = DE46DB7319124F80003122A9 /* libopencv_core.2.4.8.dylib */; };
+		DE46DB7619124FD1003122A9 /* libopencv_calib3d.2.4.8.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = DE46DB7519124FD1003122A9 /* libopencv_calib3d.2.4.8.dylib */; };
+		DE46DB7819124FFA003122A9 /* libopencv_highgui.2.4.8.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = DE46DB7719124FFA003122A9 /* libopencv_highgui.2.4.8.dylib */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXBuildRule section */
+		DE46DB7219124DEE003122A9 /* PBXBuildRule */ = {
+			isa = PBXBuildRule;
+			compilerSpec = com.apple.compilers.proxy.script;
+			fileType = pattern.proxy;
+			isEditable = 1;
+			outputFiles = (
+			);
+		};
+/* End PBXBuildRule section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		DE46DB5E191243A2003122A9 /* CopyFiles */ = {
@@ -31,6 +45,9 @@
 		DE46DB65191243A2003122A9 /* calibration.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = calibration.1; sourceTree = "<group>"; };
 		DE46DB6F1912492B003122A9 /* IncidentVector.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = IncidentVector.cpp; sourceTree = "<group>"; };
 		DE46DB7119124934003122A9 /* IncidentVector.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IncidentVector.h; sourceTree = "<group>"; };
+		DE46DB7319124F80003122A9 /* libopencv_core.2.4.8.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopencv_core.2.4.8.dylib; path = ../../../../../usr/local/Cellar/opencv/2.4.8.2/lib/libopencv_core.2.4.8.dylib; sourceTree = "<group>"; };
+		DE46DB7519124FD1003122A9 /* libopencv_calib3d.2.4.8.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopencv_calib3d.2.4.8.dylib; path = ../../../../../usr/local/Cellar/opencv/2.4.8.2/lib/libopencv_calib3d.2.4.8.dylib; sourceTree = "<group>"; };
+		DE46DB7719124FFA003122A9 /* libopencv_highgui.2.4.8.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopencv_highgui.2.4.8.dylib; path = ../../../../../usr/local/Cellar/opencv/2.4.8.2/lib/libopencv_highgui.2.4.8.dylib; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -38,6 +55,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				DE46DB7819124FFA003122A9 /* libopencv_highgui.2.4.8.dylib in Frameworks */,
+				DE46DB7619124FD1003122A9 /* libopencv_calib3d.2.4.8.dylib in Frameworks */,
+				DE46DB7419124F80003122A9 /* libopencv_core.2.4.8.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -47,6 +67,9 @@
 		DE46DB57191243A2003122A9 = {
 			isa = PBXGroup;
 			children = (
+				DE46DB7719124FFA003122A9 /* libopencv_highgui.2.4.8.dylib */,
+				DE46DB7519124FD1003122A9 /* libopencv_calib3d.2.4.8.dylib */,
+				DE46DB7319124F80003122A9 /* libopencv_core.2.4.8.dylib */,
 				DE46DB62191243A2003122A9 /* calibration */,
 				DE46DB61191243A2003122A9 /* Products */,
 			);
@@ -83,6 +106,7 @@
 				DE46DB5E191243A2003122A9 /* CopyFiles */,
 			);
 			buildRules = (
+				DE46DB7219124DEE003122A9 /* PBXBuildRule */,
 			);
 			dependencies = (
 			);
@@ -203,6 +227,15 @@
 		DE46DB6A191243A2003122A9 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
+					"/usr/local/Cellar/opencv/**",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/usr/local/Cellar/opencv/2.4.8.2/lib,
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -210,6 +243,15 @@
 		DE46DB6B191243A2003122A9 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
+					"/usr/local/Cellar/opencv/**",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/usr/local/Cellar/opencv/2.4.8.2/lib,
+				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
