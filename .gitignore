@@ -7,4 +7,4 @@
 ## Xcode Project
 ##
 *.xcodeproj/
-*.xcodeproj/*.1
+*/*.1
