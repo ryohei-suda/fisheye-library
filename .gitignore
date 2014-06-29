@@ -6,12 +6,5 @@
 ##
 ## Xcode Project
 ##
-**/*.xcodeproj/*
-!**/*.xcodeproj/project.pbxproj
-!**/*.xcodeproj/default.*
-
-##
-## Xcode Workspace
-##
-*.xcworkspace/*
-!*.xcworkspace/contents.xcworkspacedata
+*.xcodeproj/
+*.xcodeproj/*.1
