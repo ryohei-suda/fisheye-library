@@ -30,9 +30,11 @@ std::string eraseSideWhiteSpace( std::string);
 
 int main(int argc, const char * argv[])
 {
-    std::cout << "This detects lines of zonations" << std::endl;
     
-    std::vector<std::vector<std::string>> filenames = loadImageFilenames("images.csv");
+    std::cout << "Type list file name of calibration imgages > ";
+    std::string fname;
+    std::cin >> fname;
+    std::vector<std::vector<std::string>> filenames = loadImageFilenames(fname);
     std::ofstream ofs("data.dat");
     
     std::cout << "Type focal length > ";
@@ -68,9 +70,12 @@ int main(int argc, const char * argv[])
         
         while (it2 != it->end()) {
             // Vertical stripe image
-            std::cout << "Processing " << *it2 << std::endl;
+            std::cout << "Processing " << *it2 << " ... ";
             cv::Mat pattern = cv::imread(*it2, 0);
-            if(pattern.empty() || size.width != pattern.cols || size.height != pattern.rows) { return -1; }
+            if(pattern.empty() || size.width != pattern.cols || size.height != pattern.rows) {
+                std::cout << "cannot open" << std::endl;
+                return -1;
+            }
             cv::Canny(pattern, pattern, 150, 400);
             if (is_base) {
                 pattern = pattern.mul(base);
@@ -78,11 +83,16 @@ int main(int argc, const char * argv[])
             display(pattern, *it2);
             std::vector<std::vector<cv::Point2i>> edges1 = extractEdges(pattern);
             ++it2;
+            std::cout << "end" << std::endl;
+            
             
             // Horizontal stripe image
-            std::cout << "Processing " << *it2 << std::endl;
+            std::cout << "Processing " << *it2 << " ... ";
             pattern = cv::imread(*it2, 0);
-            if(pattern.empty() || size.width != pattern.cols || size.height != pattern.rows) { return -1; }
+            if(pattern.empty() || size.width != pattern.cols || size.height != pattern.rows) {
+                std::cout << "cannot open" << std::endl;
+                return -1;
+            }
             cv::Canny(pattern, pattern, 150, 400);
             if (is_base) {
                 pattern = pattern.mul(base);
@@ -90,6 +100,7 @@ int main(int argc, const char * argv[])
             display(pattern, *it2);
             std::vector<std::vector<cv::Point2i>> edges2 = extractEdges(pattern);
             ++it2;
+            std::cout << "end" << std::endl;
             
             saveEdges(ofs, edges1, edges2);
         }
@@ -107,6 +118,7 @@ std::vector<std::vector<std::string>> loadImageFilenames(std::string filename)
     std::vector<std::vector<std::string>> imgnames;
     
     if(!ifs) {
+        std::cerr << "Cant open " << filename << std::endl;
         return imgnames;
     }
     

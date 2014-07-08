@@ -21,7 +21,7 @@
 void loadData(std::string, std::vector<Pair>&, double&, cv::Point2d&, cv::Size2i&);
 std::string eraseSideWhiteSpace(std::string);
 
-//大文字の後に付いてるcは大体の場合で微分を表している
+//大文字の後に付いてるcは微分を表している
 double J1(std::vector<Pair>&); // 共線性
 double J1c(std::vector<Pair>&, int);
 double J1cc(std::vector<Pair>&, int, int);
@@ -279,6 +279,8 @@ void loadData(std::string filename, std::vector<Pair>& edges, double& f, cv::Poi
 //                    test.at<uchar>(it3->point.y, it3->point.x) = 255;
 //                }
 //            }
+//            cv::imshow("test", test);
+//            cv::waitKey();
 //        }
 //    }
 //    cv::imshow("test", test);
