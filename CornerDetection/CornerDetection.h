@@ -41,7 +41,9 @@ public:
     void loadImageXML(std::string);
     cv::Mat makeMask(cv::Mat&, cv::Mat&);
     void display(cv::Size2i, std::vector<std::vector<cv::Point2i>>&, std::string);
+    cv::Mat detectEdges(cv::Mat&, cv::Mat&);
     std::vector<std::vector<cv::Point2i>> extractEdges(cv::Mat&);
+    void processAllImages();
     void saveTwoEdges(std::vector<std::vector<cv::Point2i>>&, std::vector<std::vector<cv::Point2i>>&);
     void writeEdges(std::string);
 };

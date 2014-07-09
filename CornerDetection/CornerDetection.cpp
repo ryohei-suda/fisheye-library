@@ -71,9 +71,8 @@ cv::Mat CornerDetection::makeMask(cv::Mat& white, cv::Mat& black)
     // Remove noise
     cv::Mat element = cv::Mat::ones(9, 9, CV_8UC1);
     cv::dilate(mask, mask, element);
+    element = cv::Mat::ones(19, 19, CV_8UC1);
     cv:erode(mask, mask, element);
-    cv::erode(mask, mask, element);
-    cv::erode(mask, mask, element);
     
 //    mask.convertTo(mask, CV_32FC1);
 //    white.convertTo(white, CV_32FC1);
@@ -191,8 +190,29 @@ void CornerDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point
     }
 }
 
+cv::Mat CornerDetection::detectEdges(cv::Mat &image, cv::Mat &mask)
+{
+    cv::Mat edge_image;
+    
+    edge_image = image.mul(mask);
+    cv::threshold(edge_image, edge_image, 0, 1, cv::THRESH_BINARY|cv::THRESH_OTSU);
+    
+    cv::Mat kernel = (cv::Mat_<uchar>(3,3) << 0,1,0, 1,1,1, 0,1,0 );
+//    cv::Mat::ones(3, 3, CV_8UC1);
+    cv::Mat outline;
+    cv::erode(edge_image, outline, kernel);
+    edge_image = edge_image - outline;
+    
+    kernel = cv::Mat::ones(9, 9, CV_8UC1);
+    cv::erode(mask, mask, kernel);
+    edge_image = edge_image.mul(mask) * 255;
+    
+    return edge_image;
+}
 
-//TODO sort points according to line
+/*
+ * Extract points of edges from an edge image
+ */
 std::vector<std::vector<cv::Point2i>> CornerDetection::extractEdges(cv::Mat& image)
 {
     std::vector<std::vector<cv::Point2i>> edges;
@@ -239,6 +259,36 @@ std::vector<std::vector<cv::Point2i>> CornerDetection::extractEdges(cv::Mat& ima
     }
     
     return edges;
+}
+
+/*
+ * Load images, extract edges, and save these
+ */
+void CornerDetection::processAllImages()
+{
+    std::vector<CornerDetection::pair>::iterator pair = image_names.begin();
+    for (; pair != image_names.end(); ++pair) {
+        cv::Mat white = cv::imread(pair->white, CV_LOAD_IMAGE_GRAYSCALE);
+        cv::Mat black = cv::imread(pair->black, CV_LOAD_IMAGE_GRAYSCALE);
+        
+        cv::Mat pattern1 = cv::imread(pair->pattern1, CV_LOAD_IMAGE_GRAYSCALE);
+        cv::Mat pattern2 = cv::imread(pair->pattern2, CV_LOAD_IMAGE_GRAYSCALE);
+        cv::Mat mask = makeMask(white, black);
+        
+//        cv::Canny(pattern1, pattern1, 150, 400);
+//        pattern1 = pattern1.mul(mask);
+        pattern1 = detectEdges(pattern1, mask);
+        std::vector<std::vector<cv::Point2i>> edges1 = extractEdges(pattern1);
+        display(cv::Size2i(pattern1.cols, pattern1.rows), edges1, "pattern1");
+        
+//        cv::Canny(pattern2, pattern2, 150, 400);
+//        pattern2 = pattern2.mul(mask);
+        pattern2 = detectEdges(pattern2, mask);
+        std::vector<std::vector<cv::Point2i>>edges2 = extractEdges(pattern2);
+        display(cv::Size2i(pattern2.cols, pattern2.rows), edges2, "pattern2");
+        
+        saveTwoEdges(edges1, edges2);
+    }
 }
 
 // Save a pair of edges
