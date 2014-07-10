@@ -41,7 +41,7 @@ void CornerDetection::loadImageXML(std::string filename)
     output.RootElement()->InsertEndChild(ps_elm);
     
     tinyxml2::XMLElement *node = root->FirstChildElement("pair");
-    while (true) {
+    while (node != NULL) {
         pair p;
         p.white = std::string(node->FirstChildElement("white")->GetText());
         p.black = std::string(node->FirstChildElement("black")->GetText());
