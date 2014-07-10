@@ -54,6 +54,14 @@ void CornerDetection::loadImageXML(std::string filename)
         }
     }
     
+    cv::Mat img = cv::imread(image_names[0].white);
+    tinyxml2::XMLElement *width = output.NewElement("width");
+    width->SetText(img.cols);
+    output.RootElement()->InsertEndChild(width);
+    
+    tinyxml2::XMLElement *height = output.NewElement("height");
+    height->SetText(img.rows);
+    output.RootElement()->InsertEndChild(height);
 }
 
 /*
@@ -249,9 +257,9 @@ std::vector<std::vector<cv::Point2i>> CornerDetection::extractEdges(cv::Mat& ima
         edges.push_back(new_edge);
     }
     
-    // Ignore edges which have fewer than 10 points
+    // Ignore edges which have fewer than 20 points
     for (edge = edges.begin(); edge != edges.end();) {
-        if(edge->size() < 10) {
+        if(edge->size() < 20) {
             edge = edges.erase(edge);
         } else {
             ++edge;
