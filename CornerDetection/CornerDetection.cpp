@@ -74,7 +74,7 @@ cv::Mat CornerDetection::makeMask(cv::Mat& white, cv::Mat& black)
     // Difference between white and black images
     diff = white - black;
     mask = cv::max(diff, cv::Mat::zeros(diff.rows, diff.cols, diff.type()));
-    cv::threshold(mask, mask, 0, 1, cv::THRESH_BINARY|cv::THRESH_OTSU);
+    cv::threshold(mask, mask, 15, 1, cv::THRESH_BINARY);
     
     // Remove noise
     cv::Mat element = cv::Mat::ones(9, 9, CV_8UC1);
@@ -201,12 +201,12 @@ void CornerDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point
 cv::Mat CornerDetection::detectEdges(cv::Mat &image, cv::Mat &mask)
 {
     cv::Mat edge_image;
-    
     edge_image = image.mul(mask);
-    cv::threshold(edge_image, edge_image, 0, 1, cv::THRESH_BINARY|cv::THRESH_OTSU);
     
+    cv::Canny(edge_image, edge_image, 50, 200);
+    
+//    cv::threshold(edge_image, edge_image, 0, 255, cv::THRESH_BINARY|cv::THRESH_OTSU);
     cv::Mat kernel = (cv::Mat_<uchar>(3,3) << 0,1,0, 1,1,1, 0,1,0 );
-//    cv::Mat::ones(3, 3, CV_8UC1);
     cv::Mat outline;
     cv::erode(edge_image, outline, kernel);
     edge_image = edge_image - outline;
