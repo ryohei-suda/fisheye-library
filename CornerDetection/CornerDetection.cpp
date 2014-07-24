@@ -55,6 +55,10 @@ void CornerDetection::loadImageXML(std::string filename)
     }
     
     cv::Mat img = cv::imread(image_names[0].white);
+    if (img.empty()) {
+        std::cerr << "Cannot open " << image_names[0].white << std::endl;
+        exit(-1);
+    }
     tinyxml2::XMLElement *width = output.NewElement("width");
     width->SetText(img.cols);
     output.RootElement()->InsertEndChild(width);
@@ -62,6 +66,7 @@ void CornerDetection::loadImageXML(std::string filename)
     tinyxml2::XMLElement *height = output.NewElement("height");
     height->SetText(img.rows);
     output.RootElement()->InsertEndChild(height);
+    
 }
 
 /*
@@ -277,23 +282,37 @@ void CornerDetection::processAllImages()
     std::vector<CornerDetection::pair>::iterator pair = image_names.begin();
     for (; pair != image_names.end(); ++pair) {
         cv::Mat white = cv::imread(pair->white, CV_LOAD_IMAGE_GRAYSCALE);
+        if (white.empty()) {
+            std::cerr << "Cannot open " << pair->white   << std::endl;
+            exit(-1);
+        }
         cv::Mat black = cv::imread(pair->black, CV_LOAD_IMAGE_GRAYSCALE);
-        
-        cv::Mat pattern1 = cv::imread(pair->pattern1, CV_LOAD_IMAGE_GRAYSCALE);
+        if (black.empty()) {
+            std::cerr << "Cannot open " << pair->black   << std::endl;
+            exit(-1);
+        }
+        cv::Mat pattern1 = cv::imread(pair->pattern1, CV_LOAD_IMAGE_GRAYSCALE);        if (pattern1.empty()) {
+            std::cerr << "Cannot open " << pair->pattern1   << std::endl;
+            exit(-1);
+        }
         cv::Mat pattern2 = cv::imread(pair->pattern2, CV_LOAD_IMAGE_GRAYSCALE);
+        if (pattern2.empty()) {
+            std::cerr << "Cannot open " << pair->pattern2   << std::endl;
+            exit(-1);
+        }
         cv::Mat mask = makeMask(white, black);
         
 //        cv::Canny(pattern1, pattern1, 150, 400);
 //        pattern1 = pattern1.mul(mask);
         pattern1 = detectEdges(pattern1, mask);
         std::vector<std::vector<cv::Point2i>> edges1 = extractEdges(pattern1);
-        display(cv::Size2i(pattern1.cols, pattern1.rows), edges1, "pattern1");
+        display(cv::Size2i(pattern1.cols, pattern1.rows), edges1, pair->pattern1);
         
 //        cv::Canny(pattern2, pattern2, 150, 400);
 //        pattern2 = pattern2.mul(mask);
         pattern2 = detectEdges(pattern2, mask);
         std::vector<std::vector<cv::Point2i>>edges2 = extractEdges(pattern2);
-        display(cv::Size2i(pattern2.cols, pattern2.rows), edges2, "pattern2");
+        display(cv::Size2i(pattern2.cols, pattern2.rows), edges2, pair->pattern2);
         
         saveTwoEdges(edges1, edges2);
     }
