@@ -15,6 +15,7 @@
 #include <opencv2/opencv.hpp>
 #include "IncidentVector.h"
 #include "Pair.h"
+#include "tinyxml2.h"
 
 #define A_SIZE 3
 
@@ -57,6 +58,24 @@ int main(int argc, const char * argv[])
         lines += it->edge[1].size();
     }
     std::cout << "Lines: " << lines << std::endl;
+    cv::Mat img = cv::Mat::zeros(img_size.height, img_size.width, CV_8UC1);
+    cv::namedWindow("edges", CV_WINDOW_NORMAL);
+    for (int i=0; i < edges.size(); ++i) {
+        for (int j=0; j < edges[i].edge[0].size(); ++j) {
+            for (int k=0; k < edges[i].edge[0][j].size(); ++k) {
+                img.at<uchar>(edges[i].edge[0][j][k].point.y, edges[i].edge[0][j][k].point.x) = 255;
+            }
+            cv::imshow("edges", img);
+            cv::waitKey();
+        }
+        for (int j=0; j < edges[i].edge[1].size(); ++j) {
+            for (int k=0; k < edges[i].edge[1][j].size(); ++k) {
+                img.at<uchar>(edges[i].edge[1][j][k].point.y, edges[i].edge[1][j][k].point.x) = 255;
+            }
+            cv::imshow("edges", img);
+            cv::waitKey();
+        }
+    }
     
     std::cout << "Center:\t" << center << std::endl;
     std::cout << "     f:\t" << f << std::endl;
@@ -201,89 +220,68 @@ int main(int argc, const char * argv[])
 void loadData(std::string filename, std::vector<Pair>& edges, double& f, cv::Point2d& center, cv::Size2i& img_size)
 {
     edges.clear();
-    std::ifstream ifs(filename);
     
-    std::string line;
-    Pair *pair = nullptr;
     
-    int status = -1; // -1: Initial, 0: first edge, 1: second edge, 2: f, 3: center, 4: image size
-    while (getline(ifs, line)) {
-        line = eraseSideWhiteSpace(line);
-        
-        if (line == "#pair") {
-            if (pair != nullptr) {
-                edges.push_back(*pair);
-            }
-            pair = new Pair;
-            status = -1;
-            
-        } else if (line == "#edges1") {
-            pair->edge[0].clear();
-            status = 0;
-            
-        } else if (line == "#edges2") {
-            pair->edge[1].clear();
-            status = 1;
+    tinyxml2::XMLDocument doc;
+    doc.LoadFile(filename.c_str());
+    tinyxml2::XMLElement *root = doc.FirstChildElement("edges");
+    
+    double unit = atof(root->FirstChildElement("pixel_size")->GetText());
+    f = atof(root->FirstChildElement("focal_length")->GetText()) / unit;
+    IncidentVector::setF(f);
 
-        } else if (line == "#f") {
-            status = 2;
-            
-        } else if (line == "#center") {
-            status = 3;
-            
-        } else if (line == "#img_size") {
-            status = 4;
+    img_size.width = atoi(root->FirstChildElement("width")->GetText());
+    center.x = img_size.width / 2.0;
+    img_size.height = atoi(root->FirstChildElement("height")->GetText());
+    center.y = img_size.height / 2.0;
+    IncidentVector::setCenter(center);
+    
+    std::stringstream ssdata;
+    tinyxml2::XMLElement *pair = root->FirstChildElement("pair");
+    while (pair != NULL) {
+        Pair tmp;
         
-        } else {
-            std::stringstream ssline(line);
-            if (status == 0 || status == 1) {
-                std::stringstream ssdata;
-                std::string data;
-                std::vector<IncidentVector> edge; // One line of points
-                while (getline(ssline, data, ',')) {
-                    ssdata.str(eraseSideWhiteSpace(data));
-                    cv::Point2d point;
-                    ssdata >> point.x;
-                    ssdata >> point.y;
-        
-                    edge.push_back(*(new IncidentVector(point)));
-                    ssdata.clear();
-                }
-                pair->edge[status].push_back(edge);
-                
-            } else if (status == 2) {
-                ssline >> f;
-                IncidentVector::setF(f);
-                
-            } else if (status == 3) {
-                ssline >> center.x;
-                ssline >> center.y;
-                IncidentVector::setCenter(center);
-                
-            } else if (status == 4) {
-                ssline >> img_size.width;
-                ssline >> img_size.height;
+        // edge1
+        tinyxml2::XMLElement *edge1 = pair->FirstChildElement("edge1");
+        tinyxml2::XMLElement *line = edge1->FirstChildElement("line");
+        while (line != NULL) {
+            std::vector<IncidentVector> edge; // One line of points
+            tinyxml2::XMLElement *p = line->FirstChildElement("p");
+            while (p != NULL) {
+                cv::Point2d point;
+                ssdata.str(p->GetText());
+                ssdata >> point.x;
+                ssdata >> point.y;
+                edge.push_back(*(new IncidentVector(point)));
+                ssdata.clear();
+                p = p->NextSiblingElement("p");
             }
+            tmp.edge[0].push_back(edge);
+            line = line->NextSiblingElement("line");
         }
+        
+        // edge2
+        tinyxml2::XMLElement *edge2 = pair->FirstChildElement("edge2");
+        line = edge2->FirstChildElement("line");
+        while (line != NULL) {
+            std::vector<IncidentVector> edge; // One line of points
+            tinyxml2::XMLElement *p = line->FirstChildElement("p");
+            while (p != NULL) {
+                cv::Point2d point;
+                ssdata.str(p->GetText());
+                ssdata >> point.x;
+                ssdata >> point.y;
+                edge.push_back(*(new IncidentVector(point)));
+                ssdata.clear();
+                p = p->NextSiblingElement("p");
+            }
+            tmp.edge[1].push_back(edge);
+            line = line->NextSiblingElement("line");
+        }
+        
+        edges.push_back(tmp);
+        pair = pair->NextSiblingElement("pair");
     }
-    edges.push_back(*pair);
-    
-    
-    // Make an edge image
-//    cv::Mat test = cv::Mat::zeros(img_size.height, img_size.width, CV_8UC1);
-//    cv::namedWindow("test");
-//    for (std::vector<Pair>::iterator it = edges.begin(); it != edges.end(); ++it) {
-//        for (int i = 0; i < 2; ++i) {
-//            for (std::vector<std::vector<IncidentVector>>::iterator it2 = it->edge[i].begin(); it2 != it->edge[i].end(); ++it2) {
-//                for (std::vector<IncidentVector>::iterator it3 = it2->begin(); it3 != it2->end(); ++it3) {
-//                    test.at<uchar>(it3->point.y, it3->point.x) = 255;
-//                }
-//            }
-//            cv::imshow("test", test);
-//            cv::waitKey();
-//        }
-//    }
-//    cv::imshow("test", test);
 }
 
 std::string eraseSideWhiteSpace( std::string str )
