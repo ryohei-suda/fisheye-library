@@ -17,7 +17,7 @@
 #include "Pair.h"
 #include "tinyxml2.h"
 
-#define A_SIZE 3
+#define A_SIZE 5
 
 void loadData(std::string, std::vector<Pair>&, double&, cv::Point2d&, cv::Size2i&);
 std::string eraseSideWhiteSpace(std::string);
@@ -58,24 +58,27 @@ int main(int argc, const char * argv[])
         lines += it->edge[1].size();
     }
     std::cout << "Lines: " << lines << std::endl;
-    cv::Mat img = cv::Mat::zeros(img_size.height, img_size.width, CV_8UC1);
-    cv::namedWindow("edges", CV_WINDOW_NORMAL);
-    for (int i=0; i < edges.size(); ++i) {
-        for (int j=0; j < edges[i].edge[0].size(); ++j) {
-            for (int k=0; k < edges[i].edge[0][j].size(); ++k) {
-                img.at<uchar>(edges[i].edge[0][j][k].point.y, edges[i].edge[0][j][k].point.x) = 255;
-            }
-            cv::imshow("edges", img);
-            cv::waitKey();
-        }
-        for (int j=0; j < edges[i].edge[1].size(); ++j) {
-            for (int k=0; k < edges[i].edge[1][j].size(); ++k) {
-                img.at<uchar>(edges[i].edge[1][j][k].point.y, edges[i].edge[1][j][k].point.x) = 255;
-            }
-            cv::imshow("edges", img);
-            cv::waitKey();
-        }
-    }
+    
+    // Show an image of all edges
+//    cv::Mat img = cv::Mat::zeros(img_size.height, img_size.width, CV_8UC1);
+//    cv::namedWindow("edges", CV_WINDOW_NORMAL);
+//    for (int i=0; i < edges.size(); ++i) {
+//        for (int j=0; j < edges[i].edge[0].size(); ++j) {
+//            for (int k=0; k < edges[i].edge[0][j].size(); ++k) {
+//                img.at<uchar>(edges[i].edge[0][j][k].point.y, edges[i].edge[0][j][k].point.x) = 255;
+//            }
+//            cv::imshow("edges", img);
+////            cv::waitKey();
+//        }
+//        for (int j=0; j < edges[i].edge[1].size(); ++j) {
+//            for (int k=0; k < edges[i].edge[1][j].size(); ++k) {
+//                img.at<uchar>(edges[i].edge[1][j][k].point.y, edges[i].edge[1][j][k].point.x) = 255;
+//            }
+//            cv::imshow("edges", img);
+////            cv::waitKey();
+//        }
+//    }
+//    cv::imwrite("edges.png", img);
     
     std::cout << "Center:\t" << center << std::endl;
     std::cout << "     f:\t" << f << std::endl;
@@ -186,7 +189,8 @@ int main(int argc, const char * argv[])
             for (int i = 0; i < A_SIZE; ++i) {
                 std::cout << "    a" << i << ":\t" << a[i] << std::endl;
             }
-        
+            
+            
             break;
         } else {
             J0 = J_;
@@ -198,6 +202,7 @@ int main(int argc, const char * argv[])
             for (int i = 0; i < A_SIZE; ++i) {
                 std::cout << "    a" << i << ":\t" << a[i] << std::endl;
             }
+            
         }
     }
     
@@ -282,19 +287,6 @@ void loadData(std::string filename, std::vector<Pair>& edges, double& f, cv::Poi
         edges.push_back(tmp);
         pair = pair->NextSiblingElement("pair");
     }
-}
-
-std::string eraseSideWhiteSpace( std::string str )
-{
-    while (*str.begin() == ' ' || *str.begin() == '\t' ) { // Beggining
-        str.erase(0, 1);
-    }
-    
-    while( *str.rbegin() == ' ' || *str.rbegin() == '\t' ) { // End
-        str.erase( str.size() - 1 );
-    }
-    
-    return str;
 }
 
 double J1(std::vector<Pair>& edges)
