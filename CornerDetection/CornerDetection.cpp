@@ -137,6 +137,11 @@ void CornerDetection::onMouse(int event, int x, int y, int flag, void* data)
                 }
             }
             break;
+        case cv::EVENT_LBUTTONDBLCLK: // Remove one point
+            selection->status = 3;
+            selection->area.x = x;
+            selection->area.y = y;
+            break;
     }
 }
 
@@ -190,7 +195,7 @@ void CornerDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point
                 if (deleted) {
                     std::vector<std::vector<cv::Point2i>> clustered = clusteringEdges(*line);
                     for (std::vector<std::vector<cv::Point2i>>::iterator it = clustered.begin(); it != clustered.end();) {
-                        if (it->size() < 20) {
+                        if (it->size() < 20) { // Delete edges which have under 20 points
                             it = clustered.erase(it);
                         } else {
                             ++it;
@@ -208,6 +213,44 @@ void CornerDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point
                 }
             }
             
+            selection.area.x = 0;
+            selection.area.y = 0;
+            selection.area.height = 0;
+            selection.area.width = 0;
+            selection.status = 0;
+            
+        } else if (selection.status == 3) { // Remove one point
+            for (std::vector<std::vector<cv::Point2i>>::iterator line = edges.begin(); line != edges.end(); ) {
+                bool deleted = false;
+                for (std::vector<cv::Point2i>::iterator point = line->begin(); point != line->end(); ) {
+                    if (point->x == selection.area.x && point->y == selection.area.y) {
+                        point = line->erase(point);
+                        deleted = true;
+                        break;
+                    } else {
+                        ++point;
+                    }
+                }
+                if (deleted) {
+                    std::vector<std::vector<cv::Point2i>> clustered = clusteringEdges(*line);
+                    for (std::vector<std::vector<cv::Point2i>>::iterator it = clustered.begin(); it != clustered.end();) {
+                        if (it->size() < 20) { // Delete edges which have under 20 points
+                            it = clustered.erase(it);
+                        } else {
+                            ++it;
+                        }
+                    }
+                    if (clustered.size() == 0) {
+                        line = edges.erase(line);
+                    } else {
+                        *line = clustered[0];
+                        line = edges.insert(line, clustered.begin()+1, clustered.end());
+                    }
+                    break;
+                }
+            }
+            
+            std::cout << "end test" << std::endl;
             selection.area.x = 0;
             selection.area.y = 0;
             selection.area.height = 0;
