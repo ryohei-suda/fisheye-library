@@ -41,22 +41,23 @@ void CornerDetection::loadImageXML(std::string filename)
     output.RootElement()->InsertEndChild(ps_elm);
     
     tinyxml2::XMLElement *node = root->FirstChildElement("pair");
-    while (node != NULL) {
+    while (node) {
         pair p;
-        p.white = std::string(node->FirstChildElement("white")->GetText());
-        p.black = std::string(node->FirstChildElement("black")->GetText());
+        if (node->FirstChildElement("white")) {
+            p.white = std::string(node->FirstChildElement("white")->GetText());
+        }
+        if (node->FirstChildElement("black")) {
+            p.black = std::string(node->FirstChildElement("black")->GetText());
+        }
         p.pattern1 = std::string(node->FirstChildElement("pattern1")->GetText());
         p.pattern2 = std::string(node->FirstChildElement("pattern2")->GetText());
         image_names.push_back(p);
         node = node->NextSiblingElement("pair");
-        if (node == NULL) {
-            break;
-        }
     }
     
-    cv::Mat img = cv::imread(image_names[0].white);
+    cv::Mat img = cv::imread(image_names[0].pattern1);
     if (img.empty()) {
-        std::cerr << "Cannot open " << image_names[0].white << std::endl;
+        std::cerr << "Cannot open " << image_names[0].pattern1 << std::endl;
         exit(-1);
     }
     tinyxml2::XMLElement *width = output.NewElement("width");
@@ -79,6 +80,10 @@ cv::Mat CornerDetection::makeMask(cv::Mat& white, cv::Mat& black)
     // Difference between white and black images
     diff = white - black;
     mask = cv::max(diff, cv::Mat::zeros(diff.rows, diff.cols, diff.type()));
+    
+    cv::imshow("mask", mask*255);
+    cv::waitKey();
+    
     cv::threshold(mask, mask, 15, 1, cv::THRESH_BINARY);
     
     // Remove noise
@@ -132,6 +137,11 @@ void CornerDetection::onMouse(int event, int x, int y, int flag, void* data)
                 }
             }
             break;
+        case cv::EVENT_LBUTTONDBLCLK: // Remove one point
+            selection->status = 3;
+            selection->area.x = x;
+            selection->area.y = y;
+            break;
     }
 }
 
@@ -173,21 +183,74 @@ void CornerDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point
         } else if (selection.status == 2) {
 //            image(selection.area) = cv::Mat::zeros(selection.area.height, selection.area.width, CV_8UC1);
             for (std::vector<std::vector<cv::Point2i>>::iterator line = edges.begin(); line != edges.end(); ) {
+                bool deleted = false;
                 for (std::vector<cv::Point2i>::iterator point = line->begin(); point != line->end(); ) {
-                    
                     if (point->x >= selection.area.x && point->x <= selection.area.x+selection.area.width && point->y >= selection.area.y && point->y <= selection.area.y+selection.area.height) {
                         point = line->erase(point);
+                        deleted = true;
                     } else {
                         ++point;
                     }
                 }
-                if (line->size() == 0) {
-                    line = edges.erase(line);
+                if (deleted) {
+                    std::vector<std::vector<cv::Point2i>> clustered = clusteringEdges(*line);
+                    for (std::vector<std::vector<cv::Point2i>>::iterator it = clustered.begin(); it != clustered.end();) {
+                        if (it->size() < 20) { // Delete edges which have under 20 points
+                            it = clustered.erase(it);
+                        } else {
+                            ++it;
+                        }
+                    }
+                    if (clustered.size() == 0) {
+                        line = edges.erase(line);
+                    } else {
+                        *line = clustered[0];
+                        line = edges.insert(line, clustered.begin()+1, clustered.end());
+                    }
                 } else {
                     ++line;
+                    
                 }
             }
             
+            selection.area.x = 0;
+            selection.area.y = 0;
+            selection.area.height = 0;
+            selection.area.width = 0;
+            selection.status = 0;
+            
+        } else if (selection.status == 3) { // Remove one point
+            for (std::vector<std::vector<cv::Point2i>>::iterator line = edges.begin(); line != edges.end(); ) {
+                bool deleted = false;
+                for (std::vector<cv::Point2i>::iterator point = line->begin(); point != line->end(); ) {
+                    if (point->x == selection.area.x && point->y == selection.area.y) {
+                        point = line->erase(point);
+                        deleted = true;
+                        break;
+                    } else {
+                        ++point;
+                    }
+                }
+                if (deleted) {
+                    std::vector<std::vector<cv::Point2i>> clustered = clusteringEdges(*line);
+                    for (std::vector<std::vector<cv::Point2i>>::iterator it = clustered.begin(); it != clustered.end();) {
+                        if (it->size() < 20) { // Delete edges which have under 20 points
+                            it = clustered.erase(it);
+                        } else {
+                            ++it;
+                        }
+                    }
+                    if (clustered.size() == 0) {
+                        line = edges.erase(line);
+                    } else {
+                        *line = clustered[0];
+                        line = edges.insert(line, clustered.begin()+1, clustered.end());
+                    }
+                    break;
+                }
+            }
+            
+            std::cout << "end test" << std::endl;
             selection.area.x = 0;
             selection.area.y = 0;
             selection.area.height = 0;
@@ -240,6 +303,25 @@ std::vector<std::vector<cv::Point2i>> CornerDetection::extractEdges(cv::Mat& ima
         }
     }
     
+    
+    edges = clusteringEdges(points);
+    
+    // Ignore edges which have fewer than 20 points
+    for (edge = edges.begin(); edge != edges.end();) {
+        if(edge->size() < 20) {
+            edge = edges.erase(edge);
+        } else {
+            ++edge;
+        }
+    }
+    
+    return edges;
+}
+
+std::vector<std::vector<cv::Point2i>> CornerDetection::clusteringEdges(std::vector<cv::Point2i> points)
+{
+    std::vector<std::vector<cv::Point2i>> edges;
+    
     while (!points.empty()) {
         std::vector<cv::Point2i> new_edge;
         std::vector<cv::Point2i>::iterator tmp;
@@ -262,15 +344,6 @@ std::vector<std::vector<cv::Point2i>> CornerDetection::extractEdges(cv::Mat& ima
         edges.push_back(new_edge);
     }
     
-    // Ignore edges which have fewer than 20 points
-    for (edge = edges.begin(); edge != edges.end();) {
-        if(edge->size() < 20) {
-            edge = edges.erase(edge);
-        } else {
-            ++edge;
-        }
-    }
-    
     return edges;
 }
 
@@ -282,16 +355,10 @@ void CornerDetection::processAllImages()
     std::vector<CornerDetection::pair>::iterator pair = image_names.begin();
     for (; pair != image_names.end(); ++pair) {
         cv::Mat white = cv::imread(pair->white, CV_LOAD_IMAGE_GRAYSCALE);
-        if (white.empty()) {
-            std::cerr << "Cannot open " << pair->white   << std::endl;
-            exit(-1);
-        }
         cv::Mat black = cv::imread(pair->black, CV_LOAD_IMAGE_GRAYSCALE);
-        if (black.empty()) {
-            std::cerr << "Cannot open " << pair->black   << std::endl;
-            exit(-1);
-        }
-        cv::Mat pattern1 = cv::imread(pair->pattern1, CV_LOAD_IMAGE_GRAYSCALE);        if (pattern1.empty()) {
+
+        cv::Mat pattern1 = cv::imread(pair->pattern1, CV_LOAD_IMAGE_GRAYSCALE);
+        if (pattern1.empty()) {
             std::cerr << "Cannot open " << pair->pattern1   << std::endl;
             exit(-1);
         }
@@ -300,7 +367,13 @@ void CornerDetection::processAllImages()
             std::cerr << "Cannot open " << pair->pattern2   << std::endl;
             exit(-1);
         }
-        cv::Mat mask = makeMask(white, black);
+        
+        cv::Mat mask;
+        if (white.empty() || black.empty()) {
+            mask = cv::Mat::ones(pattern1.rows, pattern1.cols, CV_8UC1);
+        } else {
+             mask = makeMask(white, black);
+        }
         
 //        cv::Canny(pattern1, pattern1, 150, 400);
 //        pattern1 = pattern1.mul(mask);

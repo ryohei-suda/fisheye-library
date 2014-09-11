@@ -89,9 +89,9 @@ int main(int argc, const char * argv[])
             
             mapx.at<float>(y_,x_) = final.x;
             mapy.at<float>(y_,x_) = final.y;
-            
         }
     }
+    
     
     cv::Mat dst;
     cv::remap(src, dst, mapx, mapy, cv::INTER_LINEAR); // Rectify
@@ -155,10 +155,10 @@ void theta2radius(std::vector<double>& r, double& rad_step, double& f, double& f
     }
     
     std::ofstream ofs("graph.dat");
-    int r_size = 1000;
+    int r_size = max_r * PRECISION + 10;
     r.resize(r_size);
     int j = 1; // j/PRECISION: radius
-    rad_step = *(theta.end()-1) / r_size; // 0 ~ theta[end] radian
+    rad_step = theta[theta_size-1] / r_size; // 0 ~ theta[end] radian
     for (int i = 0; i < r_size; ++i) {
         double rad = rad_step * i;
         for (; j < theta_size; ++j) {

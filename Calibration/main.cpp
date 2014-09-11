@@ -60,25 +60,26 @@ int main(int argc, const char * argv[])
     std::cout << "Lines: " << lines << std::endl;
     
     // Show an image of all edges
-//    cv::Mat img = cv::Mat::zeros(img_size.height, img_size.width, CV_8UC1);
-//    cv::namedWindow("edges", CV_WINDOW_NORMAL);
-//    for (int i=0; i < edges.size(); ++i) {
-//        for (int j=0; j < edges[i].edge[0].size(); ++j) {
-//            for (int k=0; k < edges[i].edge[0][j].size(); ++k) {
-//                img.at<uchar>(edges[i].edge[0][j][k].point.y, edges[i].edge[0][j][k].point.x) = 255;
-//            }
-//            cv::imshow("edges", img);
-////            cv::waitKey();
-//        }
-//        for (int j=0; j < edges[i].edge[1].size(); ++j) {
-//            for (int k=0; k < edges[i].edge[1][j].size(); ++k) {
-//                img.at<uchar>(edges[i].edge[1][j][k].point.y, edges[i].edge[1][j][k].point.x) = 255;
-//            }
-//            cv::imshow("edges", img);
-////            cv::waitKey();
-//        }
-//    }
-//    cv::imwrite("edges.png", img);
+    cv::Mat img = cv::Mat::zeros(img_size.height, img_size.width, CV_8UC1);
+    cv::namedWindow("edges", CV_WINDOW_NORMAL);
+    for (int i=0; i < edges.size(); ++i) {
+        for (int j=0; j < edges[i].edge[0].size(); ++j) {
+            for (int k=0; k < edges[i].edge[0][j].size(); ++k) {
+                img.at<uchar>(edges[i].edge[0][j][k].point.y, edges[i].edge[0][j][k].point.x) = 255;
+            }
+            cv::imshow("edges", img);
+            cv::waitKey();
+        }
+        for (int j=0; j < edges[i].edge[1].size(); ++j) {
+            for (int k=0; k < edges[i].edge[1][j].size(); ++k) {
+                img.at<uchar>(edges[i].edge[1][j][k].point.y, edges[i].edge[1][j][k].point.x) = 255;
+            }
+            cv::imshow("edges", img);
+            cv::waitKey();
+        }
+        img = cv::Mat::zeros(img_size.height, img_size.width, CV_8UC1);
+    }
+    cv::imwrite("edges.png", img);
     
     std::cout << "Center:\t" << center << std::endl;
     std::cout << "     f:\t" << f << std::endl;
