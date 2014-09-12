@@ -38,7 +38,8 @@ int main(int argc, const char * argv[])
         lines += it->edge[1].size();
     }
     std::cout << "Lines: " << lines << std::endl;
-    
+
+    /*
     // Show an image of all edges
     cv::Mat img = cv::Mat::zeros(calib.img_size.height, calib.img_size.width, CV_8UC1);
     cv::namedWindow("edges", CV_WINDOW_NORMAL);
@@ -60,6 +61,7 @@ int main(int argc, const char * argv[])
         img = cv::Mat::zeros(calib.img_size.height, calib.img_size.width, CV_8UC1);
     }
     cv::imwrite("edges.png", img);
+    */
     
     calib.calibrate();
     calib.save("parameters.xml");

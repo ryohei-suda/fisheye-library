@@ -179,6 +179,8 @@ void Calibration::calibrate()
                 center = center_;
                 f = f_;
                 a = a_;
+                
+                this->save(std::string("parameters_") + std::to_string(iterations) + std::string(".xml"));
                 break;
             } else {
                 C *= 10;
