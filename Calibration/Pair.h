@@ -67,7 +67,7 @@ public:
     
     // Derivatives
     void calcMd(); // For points
-    void calcMc();
+    void calcMc(); // For M
     void calcMcc();
     void calcNc();
     void calcNcc();

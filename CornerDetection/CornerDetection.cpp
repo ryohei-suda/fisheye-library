@@ -81,8 +81,8 @@ cv::Mat CornerDetection::makeMask(cv::Mat& white, cv::Mat& black)
     diff = white - black;
     mask = cv::max(diff, cv::Mat::zeros(diff.rows, diff.cols, diff.type()));
     
-    cv::imshow("mask", mask*255);
-    cv::waitKey();
+//    cv::imshow("mask", mask*255);
+//    cv::waitKey();
     
     cv::threshold(mask, mask, 15, 1, cv::THRESH_BINARY);
     

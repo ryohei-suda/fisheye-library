@@ -55,9 +55,9 @@ void Pair::calcLine()
     for (int i = 0; i < 2; ++i) {
         
         cv::Mat Ng = cv::Mat::zeros(3, 3, CV_64F);
-        for (std::vector<cv::Mat>::iterator n = normalVector[i].begin();  n != normalVector[i].end(); ++n) { // For each line
-            cv::Mat nk = n->row(2).t();
-            Ng += nk * nk.t();
+        for (std::vector<cv::Mat>::iterator n = normalVector[i].begin(); n != normalVector[i].end(); ++n) { // For each line
+            cv::Mat nk = n->row(2);
+            Ng += nk.t() * nk;
         }
         
         cv::Mat eigenValues, eigenVectors;
@@ -175,7 +175,7 @@ void Pair::calcLc()
 {
     
     for (int i = 0; i < 2; ++i) {
-        std::vector<cv::Mat> tmp;
+        lc[i].empty();
         cv::Mat lg1 = lineVector[i].row(0).t();
         cv::Mat lg2 = lineVector[i].row(1).t();
         cv::Mat lg = lineVector[i].row(2).t();
@@ -184,10 +184,8 @@ void Pair::calcLc()
         double mu = lineValue[i].at<double>(2);
             
         for (int k = 0; k < IncidentVector::nparam; ++k) {
-            tmp.push_back(- lg1.dot(Nc[i].ms[k]*lg) / (mu1-mu) * lg1 - lg2.dot(Nc[i].ms[k]*lg) / (mu2-mu) * lg2);
+            lc[i].push_back(- (lg1.dot(Nc[i].ms[k]*lg)*lg1 / (mu1-mu)) - (lg2.dot(Nc[i].ms[k]*lg)*lg2 / (mu2-mu)));
         }
-        
-        lc[i] = tmp;
     }
     
 }

@@ -8,17 +8,10 @@
 
 #include "Calibration.h"
 
-void Calibration::setParameters(std::vector<Pair>& edges, double& f, cv::Point2d& center, cv::Size2i& img_size, int a_size) {
-    this->f = f;
+void Calibration::setParameters(std::vector<Pair>& edges, double& f, double& f0, cv::Point2d& center, cv::Size2i& img_size, int a_size) {
+    std::vector<double> a(a_size, 0);
+    IncidentVector::setParameters(f, f0, a, img_size, center);
     this->edges = edges;
-    this->center = center;
-    this->img_size = img_size;
-    (this->a).resize(a_size, 0.0);
-}
-
-void Calibration::setASize(int a_size)
-{
-    a.resize(a_size, 0.0);
 }
 
 void Calibration::loadData(std::string filename) {
@@ -29,9 +22,11 @@ void Calibration::loadData(std::string filename) {
     tinyxml2::XMLElement *root = doc.FirstChildElement("edges");
     
     double unit = atof(root->FirstChildElement("pixel_size")->GetText());
-    f = atof(root->FirstChildElement("focal_length")->GetText()) / unit;
+    double f = atof(root->FirstChildElement("focal_length")->GetText()) / unit;
     IncidentVector::setF(f);
     
+    cv::Size2i img_size;
+    cv::Point2d center;
     img_size.width = atoi(root->FirstChildElement("width")->GetText());
     center.x = img_size.width / 2.0;
     img_size.height = atoi(root->FirstChildElement("height")->GetText());
@@ -89,11 +84,12 @@ void Calibration::loadData(std::string filename) {
 void Calibration::save(std::string filename)
 {
     cv::FileStorage fs_out(filename, cv::FileStorage::WRITE);
-    fs_out << "center" << center;
-    fs_out << "img_size" << img_size;
-    fs_out << "f" << f;
-    fs_out << "f0" << f0;
+    fs_out << "center" << IncidentVector::getCenter();
+    fs_out << "img_size" << IncidentVector::getImgSize();
+    fs_out << "f" << IncidentVector::getF();
+    fs_out << "f0" << IncidentVector::getF0();
     fs_out << "a" << "[";
+    std::vector<double> a = IncidentVector::getA();
     for (std::vector<double>::iterator ai = a.begin(); ai != a.end(); ++ai) {
         fs_out << *ai;
     }
@@ -103,22 +99,26 @@ void Calibration::save(std::string filename)
 
 void Calibration::calibrate()
 {
-    IncidentVector::setParameters(f, f0, a, center);
-    
+     this->save(std::string("parameters_00"".xml"));
     for (std::vector<Pair>::iterator pair = edges.begin(); pair != edges.end(); ++pair) {
         pair->calcM();
         pair->calcNormal();
         pair->calcLine();
     }
     
-    gamma[0] = J1(edges);
-    gamma[1] = J2(edges);
-    gamma[2] = J3(edges);
+    gamma[0] = J1();
+    gamma[1] = J2();
+    gamma[2] = J3();
     J0 = gamma[0] / gamma[0] + gamma[1] / gamma[1] + gamma[2] / gamma[2];
     std::cout << "J1  \t" << gamma[0] << "\nJ2  \t" << gamma[1] << "\nJ3  \t" << gamma[2] << std::endl;
+    std::cout << "======================================" << std::endl;
     
     int iterations = 0;
     while (true) {
+        cv::Point2d center = IncidentVector::getCenter();
+        double f = IncidentVector::getF();
+        std::vector<double> a = IncidentVector::getA();
+        
         //    ( 2 ) 式(3) によって入射角θκα を計算し，式(6) によって入射光ベクトルmκα を計算し，
         //    式(7), (10), (13) によって∂mκα/∂c を計算する(c = u0, v0, f, a1, a2, ...)．
         for (std::vector<Pair>::iterator pair = edges.begin(); pair != edges.end(); ++pair) {
@@ -133,9 +133,9 @@ void Calibration::calibrate()
         for (int i = 0; i < IncidentVector::nparam; ++i) {
             for (int j = 0; j < IncidentVector::nparam; ++j) {
                 // (1+C) isn't calculated here, look at the next while loop
-                left.at<double>(i, j) = J1cc(edges, i, j) / gamma[0] + J2cc(edges, i, j) / gamma[1] + J3cc(edges, i, j) / gamma[2];
+                left.at<double>(i, j) = J1cc(i, j) / gamma[0] + J2cc(i, j) / gamma[1] + J3cc(i, j) / gamma[2];
             }
-            right.at<double>(i) = J1c(edges, i) / gamma[0] + J2c(edges, i) / gamma[1] + J3c(edges, i) / gamma[2];
+            right.at<double>(i) = J1c(i) / gamma[0] + J2c(i) / gamma[1] + J3c(i) / gamma[2];
         }
         
         
@@ -161,26 +161,31 @@ void Calibration::calibrate()
                 a_.push_back(a[i] + delta.at<double>(i+3));
             }
             
-            // Recalculate m and relations based on new parameters
-            IncidentVector::setParameters(f_, f0, a_, center_);
+            // Recalculate m and relatives based on new parameters
+            IncidentVector::setF(f_);
+            IncidentVector::setA(a_);
+            IncidentVector::setCenter(center_);
             for (std::vector<Pair>::iterator pair = edges.begin(); pair != edges.end(); ++pair) {
                 pair->calcM();
                 pair->calcNormal();
                 pair->calcLine();
             }
             
-            double j1 = J1(edges), j2 = J2(edges), j3 = J3(edges);
+            double j1 = J1(), j2 = J2(), j3 = J3();
             J_ =  j1 / gamma[0] + j2 / gamma[1] + j3 / gamma[2];
             std::cout << "C: " << C << "\tJ0: " << J0 << "\tJ_: " << J_;
             std::cout << "\tJ1_: " << j1 << "\tJ2_: " << j2 << "\tJ3_: " << j3 << std::endl;
             
             //    ( 6 ) ˜ J < J0 なら次へ進む．そうでなければC Ã 10C としてステップ(4) に戻る．
             if ( J_  < J0) {
-                center = center_;
-                f = f_;
-                a = a_;
-                
                 this->save(std::string("parameters_") + std::to_string(iterations) + std::string(".xml"));
+                
+                std::cout << "Center:\t" << center_ << std::endl;
+                std::cout << "     f:\t" << f_ << std::endl;
+                for (int i = 0; i < a_.size(); ++i) {
+                    std::cout << "    a" << i << ":\t" << a_[i] << std::endl;
+                }
+
                 break;
             } else {
                 C *= 10;
@@ -203,29 +208,16 @@ void Calibration::calibrate()
         }
         
         if (flag) {
-            std::cout << "Center:\t" << center << std::endl;
-            std::cout << "     f:\t" << f << std::endl;
-            for (int i = 0; i < a.size(); ++i) {
-                std::cout << "    a" << i << ":\t" << a[i] << std::endl;
-            }
             break;
             
         } else {
             J0 = J_;
             C /= 10.0;
-            IncidentVector::setParameters(f, f0, a, center);
-            
-            std::cout << "Center:\t" << center << std::endl;
-            std::cout << "     f:\t" << f << std::endl;
-            for (int i = 0; i < a.size(); ++i) {
-                std::cout << "    a" << i << ":\t" << a[i] << std::endl;
-            }
-            
         }
     }
 }
 
-double Calibration::J1(std::vector<Pair>& edges)
+double Calibration::J1()
 {
     double j1 = 0;
     
@@ -240,7 +232,7 @@ double Calibration::J1(std::vector<Pair>& edges)
     return j1;
 }
 
-double Calibration::J1c(std::vector<Pair>& edges, int c)
+double Calibration::J1c(int c)
 {
     double j1c = 0;
     
@@ -257,7 +249,7 @@ double Calibration::J1c(std::vector<Pair>& edges, int c)
     return j1c;
 }
 
-double Calibration::J1cc(std::vector<Pair>& edges, int c1, int c2)
+double Calibration::J1cc(int c1, int c2)
 {
     double j1cc = 0;
     
@@ -286,7 +278,7 @@ double Calibration::J1cc(std::vector<Pair>& edges, int c1, int c2)
     return j1cc;
 }
 
-double Calibration::J2(std::vector<Pair>& edges)
+double Calibration::J2()
 {
     double j2 = 0;
     
@@ -300,7 +292,7 @@ double Calibration::J2(std::vector<Pair>& edges)
     return j2;
 }
 
-double Calibration::J2c(std::vector<Pair>& edges, int c)
+double Calibration::J2c(int c)
 {
     double j2c = 0;
     
@@ -314,7 +306,7 @@ double Calibration::J2c(std::vector<Pair>& edges, int c)
     return j2c;
 }
 
-double Calibration::J2cc(std::vector<Pair>& edges, int c1, int c2)
+double Calibration::J2cc(int c1, int c2)
 {
     double j2cc = 0;
     
@@ -335,18 +327,27 @@ double Calibration::J2cc(std::vector<Pair>& edges, int c1, int c2)
 }
 
 
-double Calibration::J3(std::vector<Pair>& edges)
+double Calibration::J3()
 {
     double j3 = 0;
     
+//    cv::Mat test = cv::Mat::zeros(960, 1280, CV_8UC1);
+    
     for (std::vector<Pair>::iterator pair = edges.begin(); pair != edges.end(); ++pair) {
-        j3 += pow((pair->lineVector[0].row(2).t()).dot(pair->lineVector[1].row(2).t()), 2);
+        j3 += pow((pair->lineVector[0].row(2)).dot(pair->lineVector[1].row(2)), 2);
+        
+//        std::cout << pair->lineVector[0].row(2) << "\t" << pair->lineVector[1].row(2) << "\t" << pow((pair->lineVector[0].row(2).t()).dot(pair->lineVector[1].row(2).t()), 2) << std::endl;
+//        cv::line(test, center, center+100*cv::Point2d(pair->lineVector[0].row(2).at<double>(0),pair->lineVector[0].row(2).at<double>(1)), 255);
+//        cv::line(test, center, center+100*cv::Point2d(pair->lineVector[1].row(2).at<double>(0),pair->lineVector[0].row(2).at<double>(1)), 255);
+//        std::cout << pair->lineVector[0].row(2) * 10 << "\t" << pair->lineVector[1].row(2) * 10 << std::endl;
+//        cv::imshow("test", test);
+//        cv::waitKey();
     }
     
     return j3;
 }
 
-double Calibration::J3c(std::vector<Pair>& edges, int c)
+double Calibration::J3c(int c)
 {
     double j3c = 0;
     
@@ -360,7 +361,7 @@ double Calibration::J3c(std::vector<Pair>& edges, int c)
     return j3c;
 }
 
-double Calibration::J3cc(std::vector<Pair>& edges, int c1, int c2)
+double Calibration::J3cc(int c1, int c2)
 {
     double j3cc = 0;
     

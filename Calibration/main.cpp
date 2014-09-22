@@ -18,9 +18,7 @@
 #include "tinyxml2.h"
 #include "Calibration.h"
 
-#define A_SIZE 5
-
-double rad2deg(double r);
+#define A_SIZE 0
 
 int main(int argc, const char * argv[])
 {
@@ -30,7 +28,9 @@ int main(int argc, const char * argv[])
     std::cout << "Type filename> ";
     std::cin >> filename;
     calib.loadData(filename);
-    calib.setASize(A_SIZE);
+    IncidentVector::setF0(150);
+    IncidentVector::initA(A_SIZE);
+    
     std::cout << "Orthogonal pairs: " << calib.edges.size() << std::endl;
     double lines = 0;
     for (std::vector<Pair>::iterator it = calib.edges.begin(); it != calib.edges.end(); ++it) {
@@ -69,9 +69,4 @@ int main(int argc, const char * argv[])
     
     std::cout << "END" << std::endl;
     return 0;
-}
-
-
-double rad2deg(double r) {
-    return (r * 180.0) / (std::atan(1.0) * 4.0);
 }

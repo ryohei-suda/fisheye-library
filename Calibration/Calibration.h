@@ -23,17 +23,17 @@
 class Calibration {
   
 public:
-    cv::Point2d center; //(1200.0/2.0, 900.0/2.0);
-    cv::Size2i img_size;
-    double f; // = 1.4/0.00318; // focal length is pixel unit
+    //TODO Remove overlap variables with IncidentVecotr.h
+//    cv::Point2d center;
+//    cv::Size2i img_size;
+//    double f; // focal length is pixel unit
     double C = 0.0001;
-    double const f0 = 150; // Scale constant;
-    std::vector<double> a;
+//    double const f0 = 150; // Scale constant;
+//    std::vector<double> a;
     std::vector<Pair> edges;
     double J0, gamma[3];
     
-    void setParameters(std::vector<Pair>& edges, double& f, cv::Point2d& center, cv::Size2i& img_size, int a_size);
-    void setASize(int);
+    void setParameters(std::vector<Pair>& edges, double& f, double& f0, cv::Point2d& center, cv::Size2i& img_size, int a_size);
     void loadData(std::string);
     void save(std::string);
     
@@ -41,15 +41,15 @@ public:
     
     
     //大文字の後に付いてるcは微分を表している
-    double J1(std::vector<Pair>&); // 共線性
-    double J1c(std::vector<Pair>&, int);
-    double J1cc(std::vector<Pair>&, int, int);
-    double J2(std::vector<Pair>&); // 平行性
-    double J2c(std::vector<Pair>&, int);
-    double J2cc(std::vector<Pair>&, int, int);
-    double J3(std::vector<Pair>&); // 直交性
-    double J3c(std::vector<Pair>&, int);
-    double J3cc(std::vector<Pair>&, int, int);
+    double J1(); // 共線性
+    double J1c(int);
+    double J1cc(int, int);
+    double J2(); // 平行性
+    double J2c(int);
+    double J2cc(int, int);
+    double J3(); // 直交性
+    double J3c(int);
+    double J3cc(int, int);
 };
 
 #endif /* defined(__Calibration__Calibration__) */
