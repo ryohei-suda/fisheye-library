@@ -71,7 +71,7 @@ void LineDetection::loadImageXML(std::string filename)
 }
 
 /*
- * Make mask which represents a (phicical) display area
+ * Make mask which represents a (phisical) display area
  */
 cv::Mat LineDetection::makeMask(cv::Mat& white, cv::Mat& black)
 {

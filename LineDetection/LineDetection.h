@@ -38,15 +38,15 @@ public:
     std::vector<pair> image_names;
     
     LineDetection();
-    void loadImageXML(std::string);
-    cv::Mat makeMask(cv::Mat&, cv::Mat&);
-    void display(cv::Size2i, std::vector<std::vector<cv::Point2i>>&, std::string);
-    cv::Mat detectEdges(cv::Mat&, cv::Mat&);
-    std::vector<std::vector<cv::Point2i>> extractEdges(cv::Mat&);
-    std::vector<std::vector<cv::Point2i>> clusteringEdges(std::vector<cv::Point2i>);
+    void loadImageXML(std::string filename);
+    cv::Mat makeMask(cv::Mat& white, cv::Mat& black);
+    void display(cv::Size2i size, std::vector<std::vector<cv::Point2i>>& edges, std::string name);
+    cv::Mat detectEdges(cv::Mat& image, cv::Mat& mask);
+    std::vector<std::vector<cv::Point2i>> extractEdges(cv::Mat& image);
+    std::vector<std::vector<cv::Point2i>> clusteringEdges(std::vector<cv::Point2i> points);
     void processAllImages();
-    void saveTwoEdges(std::vector<std::vector<cv::Point2i>>&, std::vector<std::vector<cv::Point2i>>&);
-    void writeEdges(std::string);
+    void saveTwoEdges(std::vector<std::vector<cv::Point2i>>& first, std::vector<std::vector<cv::Point2i>>& second);
+    void writeEdges(std::string filename);
 };
 
 #endif
