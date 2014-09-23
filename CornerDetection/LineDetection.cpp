@@ -6,13 +6,13 @@
 //  Copyright (c) 2014年 RyoheiSuda. All rights reserved.
 //
 
-#include "CornerDetection.h"
+#include "LineDetection.h"
 
 
 /*
  * Constructor
  */
-CornerDetection::CornerDetection()
+LineDetection::LineDetection()
 {
     output.NewDeclaration();
     tinyxml2::XMLElement *root = output.NewElement("edges");
@@ -22,7 +22,7 @@ CornerDetection::CornerDetection()
 /*
  * Load filenames of images from XML files
  */
-void CornerDetection::loadImageXML(std::string filename)
+void LineDetection::loadImageXML(std::string filename)
 {
     tinyxml2::XMLDocument doc;
     doc.LoadFile(filename.c_str());
@@ -73,7 +73,7 @@ void CornerDetection::loadImageXML(std::string filename)
 /*
  * Make mask which represents a (phicical) display area
  */
-cv::Mat CornerDetection::makeMask(cv::Mat& white, cv::Mat& black)
+cv::Mat LineDetection::makeMask(cv::Mat& white, cv::Mat& black)
 {
     cv::Mat mask, diff;
     
@@ -101,7 +101,7 @@ cv::Mat CornerDetection::makeMask(cv::Mat& white, cv::Mat& black)
 
 // Mouse event handler
 // To remove unrelated edges
-void CornerDetection::onMouse(int event, int x, int y, int flag, void* data)
+void LineDetection::onMouse(int event, int x, int y, int flag, void* data)
 {
     static cv::Point2i origin;
     Selection *selection = (Selection *)data;
@@ -146,7 +146,7 @@ void CornerDetection::onMouse(int event, int x, int y, int flag, void* data)
 }
 
 // Display an image with selecting function
-void CornerDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2i>>& edges, std::string name)
+void LineDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2i>>& edges, std::string name)
 {
     cv::namedWindow(name, CV_GUI_NORMAL|CV_WINDOW_NORMAL|CV_WINDOW_KEEPRATIO);
     cv::moveWindow(name, 0, 0);
@@ -266,7 +266,7 @@ void CornerDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point
     }
 }
 
-cv::Mat CornerDetection::detectEdges(cv::Mat &image, cv::Mat &mask)
+cv::Mat LineDetection::detectEdges(cv::Mat &image, cv::Mat &mask)
 {
     cv::Mat edge_image;
     edge_image = image.mul(mask);
@@ -289,7 +289,7 @@ cv::Mat CornerDetection::detectEdges(cv::Mat &image, cv::Mat &mask)
 /*
  * Extract points of edges from an edge image
  */
-std::vector<std::vector<cv::Point2i>> CornerDetection::extractEdges(cv::Mat& image)
+std::vector<std::vector<cv::Point2i>> LineDetection::extractEdges(cv::Mat& image)
 {
     std::vector<std::vector<cv::Point2i>> edges;
     std::vector<std::vector<cv::Point2i>>::iterator edge;
@@ -318,7 +318,7 @@ std::vector<std::vector<cv::Point2i>> CornerDetection::extractEdges(cv::Mat& ima
     return edges;
 }
 
-std::vector<std::vector<cv::Point2i>> CornerDetection::clusteringEdges(std::vector<cv::Point2i> points)
+std::vector<std::vector<cv::Point2i>> LineDetection::clusteringEdges(std::vector<cv::Point2i> points)
 {
     std::vector<std::vector<cv::Point2i>> edges;
     
@@ -350,9 +350,9 @@ std::vector<std::vector<cv::Point2i>> CornerDetection::clusteringEdges(std::vect
 /*
  * Load images, extract edges, and save these
  */
-void CornerDetection::processAllImages()
+void LineDetection::processAllImages()
 {
-    std::vector<CornerDetection::pair>::iterator pair = image_names.begin();
+    std::vector<LineDetection::pair>::iterator pair = image_names.begin();
     for (; pair != image_names.end(); ++pair) {
         cv::Mat white = cv::imread(pair->white, CV_LOAD_IMAGE_GRAYSCALE);
         cv::Mat black = cv::imread(pair->black, CV_LOAD_IMAGE_GRAYSCALE);
@@ -392,7 +392,7 @@ void CornerDetection::processAllImages()
 }
 
 // Save a pair of edges
-void CornerDetection::saveTwoEdges(std::vector<std::vector<cv::Point2i>>& first, std::vector<std::vector<cv::Point2i>>& second)
+void LineDetection::saveTwoEdges(std::vector<std::vector<cv::Point2i>>& first, std::vector<std::vector<cv::Point2i>>& second)
 {
     tinyxml2::XMLElement *pair = output.NewElement("pair");
     output.RootElement()->InsertEndChild(pair);
@@ -429,7 +429,7 @@ void CornerDetection::saveTwoEdges(std::vector<std::vector<cv::Point2i>>& first,
     }
 }
 
-void CornerDetection::writeEdges(std::string filename)
+void LineDetection::writeEdges(std::string filename)
 {
     output.SaveFile(filename.c_str());
 }

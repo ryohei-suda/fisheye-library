@@ -1,13 +1,13 @@
 //
-//  CornerDetection.h
-//  CornerDetection
+//  LineDetection.h
+//  LineDetection
 //
 //  Created by Ryohei Suda on 2014/07/08.
 //  Copyright (c) 2014年 RyoheiSuda. All rights reserved.
 //
 
-#ifndef CornerDetection_CornerDetection_h
-#define CornerDetection_CornerDetection_h
+#ifndef LineDetection_LineDetection_h
+#define LineDetection_LineDetection_h
 
 #include <opencv2/opencv.hpp>
 #include <iostream>
@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include "tinyxml2.h"
 
-class CornerDetection
+class LineDetection
 {
 private:
     double focal_length;
@@ -37,7 +37,7 @@ public:
     } pair;
     std::vector<pair> image_names;
     
-    CornerDetection();
+    LineDetection();
     void loadImageXML(std::string);
     cv::Mat makeMask(cv::Mat&, cv::Mat&);
     void display(cv::Size2i, std::vector<std::vector<cv::Point2i>>&, std::string);
