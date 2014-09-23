@@ -31,6 +31,7 @@ void Calibration::loadData(std::string filename) {
     center.x = img_size.width / 2.0;
     img_size.height = atoi(root->FirstChildElement("height")->GetText());
     center.y = img_size.height / 2.0;
+    IncidentVector::setImgSize(img_size);
     IncidentVector::setCenter(center);
     
     std::stringstream ssdata;
@@ -109,7 +110,8 @@ void Calibration::calibrate()
     gamma[0] = J1();
     gamma[1] = J2();
     gamma[2] = J3();
-    J0 = gamma[0] / gamma[0] + gamma[1] / gamma[1] + gamma[2] / gamma[2];
+//    J0 = gamma[0] / gamma[0] + gamma[1] / gamma[1] + gamma[2] / gamma[2];
+    J0 = gamma[0] + gamma[1] + gamma[2];
     std::cout << "J1  \t" << gamma[0] << "\nJ2  \t" << gamma[1] << "\nJ3  \t" << gamma[2] << std::endl;
     std::cout << "======================================" << std::endl;
     
@@ -133,9 +135,11 @@ void Calibration::calibrate()
         for (int i = 0; i < IncidentVector::nparam; ++i) {
             for (int j = 0; j < IncidentVector::nparam; ++j) {
                 // (1+C) isn't calculated here, look at the next while loop
-                left.at<double>(i, j) = J1cc(i, j) / gamma[0] + J2cc(i, j) / gamma[1] + J3cc(i, j) / gamma[2];
+//                left.at<double>(i, j) = J1cc(i, j) / gamma[0] + J2cc(i, j) / gamma[1] + J3cc(i, j) / gamma[2];
+                left.at<double>(i, j) = J1cc(i, j) + J2cc(i, j) + J3cc(i, j);
             }
-            right.at<double>(i) = J1c(i) / gamma[0] + J2c(i) / gamma[1] + J3c(i) / gamma[2];
+//            right.at<double>(i) = J1c(i) / gamma[0] + J2c(i) / gamma[1] + J3c(i) / gamma[2];
+            right.at<double>(i) = J1c(i) + J2c(i) + J3c(i);
         }
         
         
@@ -149,6 +153,7 @@ void Calibration::calibrate()
             }
             //    ( 4 ) 次の連立1次方程式を解いてΔu0, Δv0, Δf, Δa1, ... を計算する．
             cv::solve(left.mul(cmat), -right, delta);
+//            cv::solve(left.mul(cmat), right, delta);
             std::cout << "------------------------ Iteration #: "<< iterations << " -------------------------" << std::endl;
             std::cout << "Delta: " << delta << std::endl;
             
@@ -172,7 +177,8 @@ void Calibration::calibrate()
             }
             
             double j1 = J1(), j2 = J2(), j3 = J3();
-            J_ =  j1 / gamma[0] + j2 / gamma[1] + j3 / gamma[2];
+//            J_ =  j1 / gamma[0] + j2 / gamma[1] + j3 / gamma[2];
+            J_ = j1 + j2 + j3;
             std::cout << "C: " << C << "\tJ0: " << J0 << "\tJ_: " << J_;
             std::cout << "\tJ1_: " << j1 << "\tJ2_: " << j2 << "\tJ3_: " << j3 << std::endl;
             

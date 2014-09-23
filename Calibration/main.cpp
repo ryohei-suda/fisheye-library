@@ -18,7 +18,7 @@
 #include "tinyxml2.h"
 #include "Calibration.h"
 
-#define A_SIZE 0
+#define A_SIZE 3
 
 int main(int argc, const char * argv[])
 {
