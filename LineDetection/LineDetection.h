@@ -30,8 +30,7 @@ private:
     } Selection;
     void static onMouse(int event, int x, int y, int flag, void*);
     
-    
-public:
+   public:
     typedef struct {
         std::string white, black, pattern1, pattern2;
     } pair;
@@ -47,6 +46,8 @@ public:
     void processAllImages();
     void saveTwoEdges(std::vector<std::vector<cv::Point2i>>& first, std::vector<std::vector<cv::Point2i>>& second);
     void writeEdges(std::string filename);
+    std::vector<std::vector<cv::Point2i> > detectValley(cv::Mat &src);
+    
 };
 
 #endif

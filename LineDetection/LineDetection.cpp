@@ -433,3 +433,229 @@ void LineDetection::writeEdges(std::string filename)
 {
     output.SaveFile(filename.c_str());
 }
+
+std::vector<std::vector<cv::Point2i> > LineDetection::detectValley(cv::Mat &src)
+{
+    typedef enum {UpLeft, Up, UpRight, Left, Center, Right, DownLeft, Down, DownRight} Direction;
+    int d2x[9] = {-1, 0, 1, -1, 0, 1, -1, 0, 1}; // Direction to which x coordination
+    int d2y[9] = {-1, -1, -1, 0, 0, 0, 1, 1, 1}; // Direction to which y coordination
+    Direction front[9][5] = {
+        {UpRight, DownLeft, Up, Left, UpLeft}, // UpLeft
+        {Left, Right, UpLeft, UpRight, Up}, // Up
+        {UpLeft, DownRight, Up, Right, UpRight}, // UpRight
+        {Up, Down, UpLeft, DownLeft, Left}, // Left
+        {Center},
+        {Up, Down, UpRight, DownRight, Right}, // Right
+        {UpLeft, DownRight, Left, Down, DownLeft}, // DownLeft
+        {Left, Right, DownLeft, DownRight, Down}, // Down
+        {UpRight, DownLeft, Right, Down, DownRight} // DownRight
+    };
+    Direction back[9][3] = {
+        {Right, Down, DownRight}, // Upleft
+        {DownLeft, Down, DownRight}, // Up
+        {Left, DownLeft, Down}, // UpRight
+        {UpRight, Right, DownRight}, // Left
+        {Center}, // Center
+        {UpLeft, Left, DownLeft}, // Right
+        {Up, UpRight, Right}, // DownLeft
+        {UpLeft, Up, UpRight}, // Down
+        {UpLeft, Up, Left}  // DownRight
+    };
+    std::vector<std::vector<cv::Point2i> > edges;
+    Direction first_direction = Center;
+    cv::Point2i first_center;
+    
+    uchar threshold = 10;
+    cv::Mat mask, blur;
+    cv::GaussianBlur(src, blur, cv::Size(5,5), 2);
+    
+    cv::threshold(blur, mask, 10, 1, CV_THRESH_OTSU|CV_THRESH_BINARY);
+    cv::erode(mask, mask, cv::Mat::ones(5, 5, CV_8UC1));
+    //    cv::imshow("diff", mask*255);
+    //    cv::waitKey();
+    
+    double minVal, maxVal;
+    cv::Point2i minLoc, maxLoc;
+    cv::minMaxLoc(src, &minVal, &maxVal, &minLoc, &maxLoc, mask);
+    
+    cv::Mat buff = cv::Mat::zeros(src.rows, src.cols, CV_8UC1);
+    cv::Mat dst = blur.clone();
+    int x = minLoc.x, y = minLoc.y;
+    int base_x = x, base_y = y;
+    bool opposite_lines = false; // If find lines of an oppsite direction
+    
+    while (true) { // Until detecting all lines
+        
+        Direction c_direction = Center; // direcion of current pixel
+        bool opposite = false; // If searched opposite side of a current line
+        int l_directions[9] = {0}; // To vote which directions is a appropriate line
+        
+        uchar min = 255;
+        for (int i = 0; i < 9; ++i) {
+            uchar val = src.at<uchar>(base_y+d2y[i], base_x+d2x[i]);
+            if (val < min && i != 4) {
+                c_direction = (Direction)i;
+                min = val;
+            }
+        }
+        Direction o_direction = (Direction)abs(c_direction - 8); // Opposite direcion of the first point
+        
+        std::deque<cv::Point2i> line;
+        line.push_back(cv::Point2i(x, y));
+        
+        while(true) { // Until detectiong all pixels of both sides of a line
+            uchar min = 255;
+            Direction *f = front[c_direction];
+            uchar center = src.at<uchar>(y, x);
+            for (int i = 0; i < 5; ++i) { // Front side of direction
+                uchar val = src.at<uchar>(y+d2y[f[i]], x+d2x[f[i]]);
+                if (val <= min) {
+                    min = val;
+                    c_direction = f[i];
+                }
+                if (val == center) { //TODO May need to change
+                    if(opposite) {
+                        line.push_front(cv::Point2i(x,y));
+                    } else {
+                        line.push_back(cv::Point2i(x,y));
+                    }
+                }
+            }
+            if(opposite) {
+                line.push_front(cv::Point2i(x,y));
+            } else {
+                line.push_back(cv::Point2i(x,y));
+            }
+            // Check if the pixel is out of line
+            if (blur.at<uchar>(y,x) < threshold) {
+                if (opposite) {
+                    break;
+                } else {
+                    opposite = true;
+                    x = base_x;
+                    y = base_y;
+                    c_direction = o_direction;
+                    continue;
+                }
+            }
+            
+            // Update to a next pixel
+            x += d2x[c_direction];
+            y += d2y[c_direction];
+            Direction *b = back[c_direction];
+            for (int i = 0; i < 3; ++i) { // Back side of direction
+                src.at<uchar>(y+d2y[b[i]], x+d2x[b[i]]) = 255;
+            }
+            ++l_directions[c_direction];
+            //            cv::imshow("diff", src);
+            //            cv::waitKey();
+            
+            if (x <= 0 || x >= src.cols-1 || y <= 0 || y >= src.rows-1) { // Check range of current pixel
+                if (opposite) {
+                    break;
+                } else {
+                    opposite = true;
+                    x = base_x;
+                    y = base_y;
+                    c_direction = o_direction;
+                    continue;
+                }
+            }
+        }
+        
+        // Delete 5 points from both sides of a line
+        for (int i = 0; i < 5; ++i) {
+            line.pop_front();
+            line.pop_back();
+        }
+        std::vector<cv::Point2i> t(line.size());
+        t.insert(t.begin(), line.begin(), line.end());
+        if (opposite_lines) {
+            edges.insert(edges.begin(), t);
+        } else {
+            edges.push_back(t);
+        }
+        
+        // Find a direction of a next line
+        int l_direction = 0, max_vote = -1;
+        for (int i = 0; i < 4; ++i) {
+            int vote = l_directions[i] + l_directions[8-i];
+            if (max_vote < vote) {
+                l_direction = i;
+                max_vote = vote;
+            }
+        }
+        Direction next_direction = (Direction)((l_direction+2)%4);
+        if (opposite_lines) {
+            next_direction = (Direction)(8-next_direction);
+        }
+        if (edges.size() == 1) { // When first line is found
+            first_direction = (Direction)(8-next_direction);
+            first_center = line.at((int)(line.size()/2));
+        }
+        
+        cv::Point2i center = line.at((int)(line.size()/2));
+        bool found = false;
+        while (true) {// Find next valley
+            int next_x = center.x, next_y = center.y;
+            int step_x = (next_direction%3 - 1), step_y = (next_direction/3 - 1);
+            std::deque<uchar> dq;
+            for (int i = 0; i < 5; ++i) {
+                dq.push_back(blur.at<uchar>(next_y, next_x));
+                next_x += step_x;
+                next_y += step_y;
+            }
+            while (dq.back() >= threshold && next_y < src.rows && next_y >= 0 && next_x < src.cols && next_x >= 0) {
+                // Whether the pixel is on the bottom of valley
+                if (dq[0]-2 > dq[1] && dq[1] >= dq[2] && dq[2] <= dq[3] && dq[3] < dq[4]-2) {
+                    found = true;
+                    break;
+                }
+                next_x += step_x;
+                next_y += step_y;
+                dq.pop_front();
+                dq.push_back(blur.at<uchar>(next_y, next_x));
+                dst.at<uchar>(next_y, next_x) = 127;
+            }
+            
+            if (found) {
+                base_x = next_x - 2*step_x;
+                base_y = next_y - 2*step_y;
+                uchar min_pix = 255, pix;
+                for (int i = -1; i <= 1; ++i) {
+                    for (int j = -1; j <= 1; ++j) {
+                        pix = src.at<uchar>(base_y+i, base_x+j);
+                        if (pix <= min_pix) {
+                            step_x = j;
+                            step_y = i;
+                            min_pix = pix;
+                        }
+                    }
+                }
+                base_x += step_x;
+                base_y += step_y;
+                x = base_x;
+                y = base_y;
+                break;
+            } else {
+                if (!opposite_lines) {
+                    center = first_center;
+                    next_direction = first_direction;
+                    opposite_lines = true;
+                } else {
+                    break;
+                }
+            }
+        }
+        
+        for (int i = 0; i < line.size(); ++i) {
+            dst.at<uchar>(line[i].y, line[i].x) = 255;
+        }
+        
+        if (opposite_lines && !found) {
+            break;
+        }
+    }
+    
+    return edges;
+}
