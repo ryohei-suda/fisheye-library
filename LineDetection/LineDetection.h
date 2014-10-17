@@ -29,10 +29,14 @@ private:
         int width, height;
     } Selection;
     void static onMouse(int event, int x, int y, int flag, void*);
+
+    typedef enum {Four, TwoBW, Two} PType; // 0: 4 patterns, 1: 2 patterns with black and white, 2: 2 patterns
+
     
-   public:
+public:
     typedef struct {
-        std::string white, black, pattern1, pattern2;
+        PType type;
+        std::string filenames[4];
     } pair;
     std::vector<pair> image_names;
     
@@ -46,7 +50,7 @@ private:
     void processAllImages();
     void saveTwoEdges(std::vector<std::vector<cv::Point2i>>& first, std::vector<std::vector<cv::Point2i>>& second);
     void writeEdges(std::string filename);
-    std::vector<std::vector<cv::Point2i> > detectValley(cv::Mat &src);
+    std::vector<std::vector<cv::Point2i> > detectValley(cv::Mat &img1, cv::Mat &img2);
     
 };
 

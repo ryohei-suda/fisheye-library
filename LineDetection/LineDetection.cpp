@@ -43,21 +43,36 @@ void LineDetection::loadImageXML(std::string filename)
     tinyxml2::XMLElement *node = root->FirstChildElement("pair");
     while (node) {
         pair p;
-        if (node->FirstChildElement("white")) {
-            p.white = std::string(node->FirstChildElement("white")->GetText());
+        
+        tinyxml2::XMLElement *filename = node->FirstChildElement("pattern");
+        int count;
+        for (count = 0; count < 4; ++count) {
+            if (!filename) {
+                break;
+            }
+            p.filenames[count] = std::string(filename->GetText());
+            filename = filename->NextSiblingElement("pattern");
         }
-        if (node->FirstChildElement("black")) {
-            p.black = std::string(node->FirstChildElement("black")->GetText());
+        if (count == 3|| count < 2 || count > 4) {
+            std::cerr << "Unrecognized XML structure!" << std::endl;
         }
-        p.pattern1 = std::string(node->FirstChildElement("pattern1")->GetText());
-        p.pattern2 = std::string(node->FirstChildElement("pattern2")->GetText());
+        else if (count == 4) {
+            p.type = Four;
+        } else if (count == 2) {
+            if (node->FirstChildElement("white") && node->FirstChildElement("black")) {
+                p.filenames[2] = std::string(node->FirstChildElement("white")->GetText());
+                p.filenames[3] = std::string(node->FirstChildElement("black")->GetText());
+            }
+        } else {
+            p.type = Two;
+        }
         image_names.push_back(p);
         node = node->NextSiblingElement("pair");
     }
     
-    cv::Mat img = cv::imread(image_names[0].pattern1);
+    cv::Mat img = cv::imread(image_names[0].filenames[0]);
     if (img.empty()) {
-        std::cerr << "Cannot open " << image_names[0].pattern1 << std::endl;
+        std::cerr << "Cannot open " << image_names[0].filenames[0] << std::endl;
         exit(-1);
     }
     tinyxml2::XMLElement *width = output.NewElement("width");
@@ -354,40 +369,54 @@ void LineDetection::processAllImages()
 {
     std::vector<LineDetection::pair>::iterator pair = image_names.begin();
     for (; pair != image_names.end(); ++pair) {
-        cv::Mat white = cv::imread(pair->white, CV_LOAD_IMAGE_GRAYSCALE);
-        cv::Mat black = cv::imread(pair->black, CV_LOAD_IMAGE_GRAYSCALE);
-
-        cv::Mat pattern1 = cv::imread(pair->pattern1, CV_LOAD_IMAGE_GRAYSCALE);
-        if (pattern1.empty()) {
-            std::cerr << "Cannot open " << pair->pattern1   << std::endl;
-            exit(-1);
+        std::vector<std::vector<cv::Point2i> > edges[2];
+        cv::Mat img[4];
+        switch (pair->type) {
+            case Four:
+                for (int i = 0; i < 4; ++i) {
+                    img[i] = cv::imread(pair->filenames[i], CV_LOAD_IMAGE_GRAYSCALE);
+                    if (img[i].empty()) {
+                        std::cerr << "Cannot open " << pair->filenames[i] << std::endl;
+                        exit(-1);
+                    }
+                }
+                detectValley(img[0], img[1]);
+                display(cv::Size2i(img[0].cols, img[0].rows), edges[0], pair->filenames[0]);
+                detectValley(img[2], img[3]);
+                display(cv::Size2i(img[2].cols, img[2].rows), edges[1], pair->filenames[0]);
+                break;
+                
+            case Two:
+                for (int i = 0; i < 2; ++i) {
+                    img[i] = cv::imread(pair->filenames[i], CV_LOAD_IMAGE_GRAYSCALE);
+                    if (img[i].empty()) {
+                        std::cerr << "Cannot open " << pair->filenames[i] << std::endl;
+                        exit(-1);
+                    }
+                    cv::Canny(img[i], img[i], 50, 200);
+                    edges[i] = extractEdges(img[i]);
+                    display(cv::Size2i(img[i].cols, img[i].rows), edges[i], pair->filenames[i]);
+                }
+                break;
+                
+            case TwoBW:
+                for (int i = 0; i < 4; ++i) {
+                    img[i] = cv::imread(pair->filenames[i], CV_LOAD_IMAGE_GRAYSCALE);
+                    if (img[i].empty()) {
+                        std::cerr << "Cannot open " << pair->filenames[i] << std::endl;
+                        exit(-1);
+                    }
+                }
+                cv::Mat mask = makeMask(img[2], img[3]);
+                for (int i = 0; i < 2; ++i) {
+                    cv::Mat edge = detectEdges(img[0], mask);
+                    edges[i] = extractEdges(edge);
+                    display(cv::Size2i(edge.cols, edge.rows), edges[i], pair->filenames[i]);
+                }
+                break;
         }
-        cv::Mat pattern2 = cv::imread(pair->pattern2, CV_LOAD_IMAGE_GRAYSCALE);
-        if (pattern2.empty()) {
-            std::cerr << "Cannot open " << pair->pattern2   << std::endl;
-            exit(-1);
-        }
         
-        cv::Mat mask;
-        if (white.empty() || black.empty()) {
-            mask = cv::Mat::ones(pattern1.rows, pattern1.cols, CV_8UC1);
-        } else {
-             mask = makeMask(white, black);
-        }
-        
-//        cv::Canny(pattern1, pattern1, 150, 400);
-//        pattern1 = pattern1.mul(mask);
-        pattern1 = detectEdges(pattern1, mask);
-        std::vector<std::vector<cv::Point2i>> edges1 = extractEdges(pattern1);
-        display(cv::Size2i(pattern1.cols, pattern1.rows), edges1, pair->pattern1);
-        
-//        cv::Canny(pattern2, pattern2, 150, 400);
-//        pattern2 = pattern2.mul(mask);
-        pattern2 = detectEdges(pattern2, mask);
-        std::vector<std::vector<cv::Point2i>>edges2 = extractEdges(pattern2);
-        display(cv::Size2i(pattern2.cols, pattern2.rows), edges2, pair->pattern2);
-        
-        saveTwoEdges(edges1, edges2);
+        saveTwoEdges(edges[0], edges[1]);
     }
 }
 
@@ -434,7 +463,7 @@ void LineDetection::writeEdges(std::string filename)
     output.SaveFile(filename.c_str());
 }
 
-std::vector<std::vector<cv::Point2i> > LineDetection::detectValley(cv::Mat &src)
+std::vector<std::vector<cv::Point2i> > LineDetection::detectValley(cv::Mat &img1, cv::Mat &img2)
 {
     typedef enum {UpLeft, Up, UpRight, Left, Center, Right, DownLeft, Down, DownRight} Direction;
     int d2x[9] = {-1, 0, 1, -1, 0, 1, -1, 0, 1}; // Direction to which x coordination
@@ -466,8 +495,8 @@ std::vector<std::vector<cv::Point2i> > LineDetection::detectValley(cv::Mat &src)
     cv::Point2i first_center;
     
     uchar threshold = 10;
-    cv::Mat mask, blur;
-    cv::GaussianBlur(src, blur, cv::Size(5,5), 2);
+    cv::Mat mask, blur, diff = abs(img1 - img2);
+    cv::GaussianBlur(diff, blur, cv::Size(5,5), 2);
     
     cv::threshold(blur, mask, 10, 1, CV_THRESH_OTSU|CV_THRESH_BINARY);
     cv::erode(mask, mask, cv::Mat::ones(5, 5, CV_8UC1));
@@ -476,9 +505,9 @@ std::vector<std::vector<cv::Point2i> > LineDetection::detectValley(cv::Mat &src)
     
     double minVal, maxVal;
     cv::Point2i minLoc, maxLoc;
-    cv::minMaxLoc(src, &minVal, &maxVal, &minLoc, &maxLoc, mask);
+    cv::minMaxLoc(diff, &minVal, &maxVal, &minLoc, &maxLoc, mask);
     
-    cv::Mat buff = cv::Mat::zeros(src.rows, src.cols, CV_8UC1);
+    cv::Mat buff = cv::Mat::zeros(diff.rows, diff.cols, CV_8UC1);
     cv::Mat dst = blur.clone();
     int x = minLoc.x, y = minLoc.y;
     int base_x = x, base_y = y;
@@ -492,7 +521,7 @@ std::vector<std::vector<cv::Point2i> > LineDetection::detectValley(cv::Mat &src)
         
         uchar min = 255;
         for (int i = 0; i < 9; ++i) {
-            uchar val = src.at<uchar>(base_y+d2y[i], base_x+d2x[i]);
+            uchar val = diff.at<uchar>(base_y+d2y[i], base_x+d2x[i]);
             if (val < min && i != 4) {
                 c_direction = (Direction)i;
                 min = val;
@@ -506,9 +535,9 @@ std::vector<std::vector<cv::Point2i> > LineDetection::detectValley(cv::Mat &src)
         while(true) { // Until detectiong all pixels of both sides of a line
             uchar min = 255;
             Direction *f = front[c_direction];
-            uchar center = src.at<uchar>(y, x);
+            uchar center = diff.at<uchar>(y, x);
             for (int i = 0; i < 5; ++i) { // Front side of direction
-                uchar val = src.at<uchar>(y+d2y[f[i]], x+d2x[f[i]]);
+                uchar val = diff.at<uchar>(y+d2y[f[i]], x+d2x[f[i]]);
                 if (val <= min) {
                     min = val;
                     c_direction = f[i];
@@ -544,13 +573,11 @@ std::vector<std::vector<cv::Point2i> > LineDetection::detectValley(cv::Mat &src)
             y += d2y[c_direction];
             Direction *b = back[c_direction];
             for (int i = 0; i < 3; ++i) { // Back side of direction
-                src.at<uchar>(y+d2y[b[i]], x+d2x[b[i]]) = 255;
+                diff.at<uchar>(y+d2y[b[i]], x+d2x[b[i]]) = 255;
             }
             ++l_directions[c_direction];
-            //            cv::imshow("diff", src);
-            //            cv::waitKey();
             
-            if (x <= 0 || x >= src.cols-1 || y <= 0 || y >= src.rows-1) { // Check range of current pixel
+            if (x <= 0 || x >= diff.cols-1 || y <= 0 || y >= diff.rows-1) { // Check range of current pixel
                 if (opposite) {
                     break;
                 } else {
@@ -605,7 +632,7 @@ std::vector<std::vector<cv::Point2i> > LineDetection::detectValley(cv::Mat &src)
                 next_x += step_x;
                 next_y += step_y;
             }
-            while (dq.back() >= threshold && next_y < src.rows && next_y >= 0 && next_x < src.cols && next_x >= 0) {
+            while (dq.back() >= threshold && next_y < diff.rows && next_y >= 0 && next_x < diff.cols && next_x >= 0) {
                 // Whether the pixel is on the bottom of valley
                 if (dq[0]-2 > dq[1] && dq[1] >= dq[2] && dq[2] <= dq[3] && dq[3] < dq[4]-2) {
                     found = true;
@@ -624,7 +651,7 @@ std::vector<std::vector<cv::Point2i> > LineDetection::detectValley(cv::Mat &src)
                 uchar min_pix = 255, pix;
                 for (int i = -1; i <= 1; ++i) {
                     for (int j = -1; j <= 1; ++j) {
-                        pix = src.at<uchar>(base_y+i, base_x+j);
+                        pix = diff.at<uchar>(base_y+i, base_x+j);
                         if (pix <= min_pix) {
                             step_x = j;
                             step_y = i;
