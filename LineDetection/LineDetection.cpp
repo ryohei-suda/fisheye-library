@@ -373,6 +373,7 @@ void LineDetection::processAllImages()
         cv::Mat img[4];
         switch (pair->type) {
             case Four:
+                std::cout << "Four" << std::endl;
                 for (int i = 0; i < 4; ++i) {
                     img[i] = cv::imread(pair->filenames[i], CV_LOAD_IMAGE_GRAYSCALE);
                     if (img[i].empty()) {
@@ -380,10 +381,10 @@ void LineDetection::processAllImages()
                         exit(-1);
                     }
                 }
-                detectValley(img[0], img[1]);
+                edges[0] = detectValley(img[0], img[1]);
                 display(cv::Size2i(img[0].cols, img[0].rows), edges[0], pair->filenames[0]);
-                detectValley(img[2], img[3]);
-                display(cv::Size2i(img[2].cols, img[2].rows), edges[1], pair->filenames[0]);
+                edges[1] = detectValley(img[2], img[3]);
+                display(cv::Size2i(img[2].cols, img[2].rows), edges[1], pair->filenames[1]);
                 break;
                 
             case Two:
@@ -496,6 +497,7 @@ std::vector<std::vector<cv::Point2i> > LineDetection::detectValley(cv::Mat &img1
     
     uchar threshold = 10;
     cv::Mat mask, blur, diff = abs(img1 - img2);
+    cv::imshow("diff", diff);
     cv::GaussianBlur(diff, blur, cv::Size(5,5), 2);
     
     cv::threshold(blur, mask, 10, 1, CV_THRESH_OTSU|CV_THRESH_BINARY);
@@ -595,12 +597,12 @@ std::vector<std::vector<cv::Point2i> > LineDetection::detectValley(cv::Mat &img1
             line.pop_front();
             line.pop_back();
         }
-        std::vector<cv::Point2i> t(line.size());
+        std::vector<cv::Point2i> t;
         t.insert(t.begin(), line.begin(), line.end());
         if (opposite_lines) {
             edges.insert(edges.begin(), t);
         } else {
-            edges.push_back(t);
+            edges.insert(edges.end(), t);
         }
         
         // Find a direction of a next line
