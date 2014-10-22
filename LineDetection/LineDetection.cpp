@@ -163,8 +163,7 @@ void LineDetection::onMouse(int event, int x, int y, int flag, void* data)
 // Display an image with selecting function
 void LineDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2i>>& edges, std::string name)
 {
-    cv::namedWindow(name, CV_GUI_NORMAL|CV_WINDOW_NORMAL|CV_WINDOW_KEEPRATIO);
-    cv::moveWindow(name, 0, 0);
+    cv::namedWindow(name, CV_WINDOW_NORMAL);
     
     cv::Vec3b color[30] = {cv::Vec3b(255,255,255), cv::Vec3b(255,0,0), cv::Vec3b(255,255,0), cv::Vec3b(0,255,0), cv::Vec3b(0,0,255),
         cv::Vec3b(255,0,255), cv::Vec3b(204,51,51), cv::Vec3b(204,204,51), cv::Vec3b(51,204,51), cv::Vec3b(51,204,204),
@@ -275,7 +274,6 @@ void LineDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2i
         
         cv::imshow(name, show);
         if(cv::waitKey(10) == 'n'){
-            cv::destroyWindow(name);
             break;
         }
     }
@@ -373,18 +371,18 @@ void LineDetection::processAllImages()
         cv::Mat img[4];
         switch (pair->type) {
             case Four:
-                std::cout << "Four" << std::endl;
                 for (int i = 0; i < 4; ++i) {
                     img[i] = cv::imread(pair->filenames[i], CV_LOAD_IMAGE_GRAYSCALE);
                     if (img[i].empty()) {
                         std::cerr << "Cannot open " << pair->filenames[i] << std::endl;
                         exit(-1);
                     }
+                    std::cout << "Loading " << pair->filenames[i] << std::endl;
                 }
                 edges[0] = detectValley(img[0], img[1]);
-                display(cv::Size2i(img[0].cols, img[0].rows), edges[0], pair->filenames[0]);
+                display(cv::Size2i(img[0].cols, img[0].rows), edges[0], "edges");
                 edges[1] = detectValley(img[2], img[3]);
-                display(cv::Size2i(img[2].cols, img[2].rows), edges[1], pair->filenames[1]);
+                display(cv::Size2i(img[2].cols, img[2].rows), edges[1], "edges");
                 break;
                 
             case Two:
@@ -394,6 +392,7 @@ void LineDetection::processAllImages()
                         std::cerr << "Cannot open " << pair->filenames[i] << std::endl;
                         exit(-1);
                     }
+                    std::cout << "Loading " << pair->filenames[i] << std::endl;
                     cv::Canny(img[i], img[i], 50, 200);
                     edges[i] = extractEdges(img[i]);
                     display(cv::Size2i(img[i].cols, img[i].rows), edges[i], pair->filenames[i]);
@@ -407,6 +406,7 @@ void LineDetection::processAllImages()
                         std::cerr << "Cannot open " << pair->filenames[i] << std::endl;
                         exit(-1);
                     }
+                    std::cout << "Loading " << pair->filenames[i] << std::endl;
                 }
                 cv::Mat mask = makeMask(img[2], img[3]);
                 for (int i = 0; i < 2; ++i) {
@@ -493,13 +493,116 @@ std::vector<std::vector<cv::Point2i> > LineDetection::detectValley(cv::Mat &img1
     };
     std::vector<std::vector<cv::Point2i> > edges;
     Direction first_direction = Center;
+    Direction prev_direction = Center; // Previous direction to find next line
     cv::Point2i first_center;
     
     uchar threshold = 10;
     cv::Mat mask, blur, diff = abs(img1 - img2);
     cv::imshow("diff", diff);
-    cv::GaussianBlur(diff, blur, cv::Size(5,5), 2);
+    cv::GaussianBlur(diff, blur, cv::Size(5,5), 1);
     
+    cv::Mat valley = cv::Mat::zeros(blur.rows, blur.cols, CV_8UC1);
+    for (int y = 3; y < blur.rows-3; ++y) {
+        for (int x = 3; x < blur.cols-3; ++x) {
+            if (threshold < blur.at<uchar>(y-3,x) &&
+                blur.at<uchar>(y-3,x) > blur.at<uchar>(y-2,x) &&
+                blur.at<uchar>(y-2,x) > blur.at<uchar>(y-1,x) &&
+                blur.at<uchar>(y-1,x) >= blur.at<uchar>(y,x) &&
+                blur.at<uchar>(y,x) <= blur.at<uchar>(y+1,x) &&
+                blur.at<uchar>(y+1,x) < blur.at<uchar>(y+2,x) &&
+                blur.at<uchar>(y+2,x) < blur.at<uchar>(y+3,x) &&
+                threshold < blur.at<uchar>(y+3,x)) {
+                valley.at<uchar>(y,x) = 255;
+            }
+            else if (threshold < blur.at<uchar>(y,x-3) &&
+                blur.at<uchar>(y,x-3) > blur.at<uchar>(y,x-2) &&
+                blur.at<uchar>(y,x-2) > blur.at<uchar>(y,x-1) &&
+                blur.at<uchar>(y,x-1) >= blur.at<uchar>(y,x) &&
+                blur.at<uchar>(y,x) <= blur.at<uchar>(y,x+1) &&
+                blur.at<uchar>(y,x+1) < blur.at<uchar>(y,x+2) &&
+                blur.at<uchar>(y,x+2) < blur.at<uchar>(y,x+3) &&
+                threshold < blur.at<uchar>(y,x+3)) {
+                valley.at<uchar>(y,x) = 255;
+            }
+            else if (threshold < blur.at<uchar>(y-3,x-3) &&
+                blur.at<uchar>(y-3,x-3) > blur.at<uchar>(y-2,x-2) &&
+                blur.at<uchar>(y-2,x-2) > blur.at<uchar>(y-1,x-1) &&
+                blur.at<uchar>(y-1,x-1) >= blur.at<uchar>(y,x) &&
+                blur.at<uchar>(y,x) <= blur.at<uchar>(y+1,x+1) &&
+                blur.at<uchar>(y+1,x+1) < blur.at<uchar>(y+2,x+2) &&
+                blur.at<uchar>(y+2,x+2) < blur.at<uchar>(y+3,x+3) &&
+                threshold < blur.at<uchar>(y+3,x+3)) {
+                valley.at<uchar>(y,x) = 255;
+            }
+            else if (threshold < blur.at<uchar>(y+3,x-3) &&
+                blur.at<uchar>(y+3,x-3) > blur.at<uchar>(y+2,x-2) &&
+                blur.at<uchar>(y+2,x-2) > blur.at<uchar>(y+1,x-1) &&
+                blur.at<uchar>(y+1,x-1) >= blur.at<uchar>(y,x) &&
+                blur.at<uchar>(y,x) <= blur.at<uchar>(y-1,x+1) &&
+                blur.at<uchar>(y-1,x+1) < blur.at<uchar>(y-2,x+2) &&
+                blur.at<uchar>(y-2,x+2) < blur.at<uchar>(y-3,x+3) &&
+                threshold < blur.at<uchar>(y-3,x+3)) {
+                valley.at<uchar>(y,x) = 255;
+            }
+        }
+    }
+    cv::Mat valley2 = valley.clone();
+    for (int y = 3; y < blur.rows-3; ++y) {
+        for (int x = 3; x < blur.cols-3; ++x) {
+            if (valley.at<uchar>(y,x) > 0) {
+                uchar count = 0, max = 0;
+                for (int i = 0; i < 9; ++i) {
+                    if( valley.at<uchar>(y+d2y[i], x+d2x[i]) ) {
+                        ++count;
+                        if (max < diff.at<uchar>(y+d2y[i], x+d2x[i])) {
+                            max = diff.at<uchar>(y+d2y[i], x+d2x[i]);
+                        }
+                    }
+                    if (i == 3) { ++i; }
+                }
+                if (count > 2 && max < diff.at<uchar>(y,x)) {
+                    valley2.at<uchar>(y, x) = 0;
+                } else if (count < 2)
+                    valley2.at<uchar>(y, x) = 0;
+            }
+        }
+    }
+    
+    
+//    std::vector<std::vector<cv::Point2i> > points = extractEdges(valley);
+//    cv::Mat clustered = cv::Mat::zeros(blur.rows, blur.cols, CV_8UC1);
+//    for (int i = 0; i < points.size(); ++i) {
+//        for (int j = 0; j < points[i].size(); ++j) {
+//            clustered.at<uchar>(points[i][j].y, points[i][j].x) = 255;
+//        }
+//    }
+    
+    cv::imshow("diff", valley);
+    while(true){
+        char key = cv::waitKey();
+        bool flag = false;
+        switch (key) {
+            case 'v':
+                cv::imshow("diff", valley);
+                break;
+            case 'd':
+                cv::imshow("diff", diff);
+                break;
+            case 'b':
+                cv::imshow("diff", blur);
+                break;
+            case 'c':
+                cv::imshow("diff", valley2);
+                break;
+            case 'n':
+                flag = true;
+                break;
+        }
+        if (flag) {
+            break;
+        }
+    }
+    /*
     cv::threshold(blur, mask, 10, 1, CV_THRESH_OTSU|CV_THRESH_BINARY);
     cv::erode(mask, mask, cv::Mat::ones(5, 5, CV_8UC1));
     //    cv::imshow("diff", mask*255);
@@ -544,7 +647,7 @@ std::vector<std::vector<cv::Point2i> > LineDetection::detectValley(cv::Mat &img1
                     min = val;
                     c_direction = f[i];
                 }
-                if (val == center) { //TODO May need to change
+                if (val == center) {
                     if(opposite) {
                         line.push_front(cv::Point2i(x,y));
                     } else {
@@ -558,7 +661,9 @@ std::vector<std::vector<cv::Point2i> > LineDetection::detectValley(cv::Mat &img1
                 line.push_back(cv::Point2i(x,y));
             }
             // Check if the pixel is out of line
-            if (blur.at<uchar>(y,x) < threshold) {
+            if (blur.at<uchar>(y,x) < threshold &&
+                blur.at<uchar>(y+2*d2y[f[0]], x+2*d2x[f[0]]) < threshold &&
+                blur.at<uchar>(y+2*d2y[f[1]], x+2*d2x[f[1]]) < threshold) {
                 if (opposite) {
                     break;
                 } else {
@@ -593,7 +698,7 @@ std::vector<std::vector<cv::Point2i> > LineDetection::detectValley(cv::Mat &img1
         }
         
         // Delete 5 points from both sides of a line
-        for (int i = 0; i < 5; ++i) {
+        for (int i = 0; i < 5 && line.size() > 2; ++i) {
             line.pop_front();
             line.pop_back();
         }
@@ -615,9 +720,14 @@ std::vector<std::vector<cv::Point2i> > LineDetection::detectValley(cv::Mat &img1
             }
         }
         Direction next_direction = (Direction)((l_direction+2)%4);
-        if (opposite_lines) {
-            next_direction = (Direction)(8-next_direction);
+        for (int i = 0; i < 3; ++i) { // Check if next direction is opposite side
+            if (next_direction == back[prev_direction][i]) {
+                next_direction = (Direction)(8-next_direction);
+                break;
+            }
         }
+        prev_direction = next_direction;
+        
         if (edges.size() == 1) { // When first line is found
             first_direction = (Direction)(8-next_direction);
             first_center = line.at((int)(line.size()/2));
@@ -629,14 +739,14 @@ std::vector<std::vector<cv::Point2i> > LineDetection::detectValley(cv::Mat &img1
             int next_x = center.x, next_y = center.y;
             int step_x = (next_direction%3 - 1), step_y = (next_direction/3 - 1);
             std::deque<uchar> dq;
-            for (int i = 0; i < 5; ++i) {
+            for (int i = 0; i < 7; ++i) {
                 dq.push_back(blur.at<uchar>(next_y, next_x));
                 next_x += step_x;
                 next_y += step_y;
             }
             while (dq.back() >= threshold && next_y < diff.rows && next_y >= 0 && next_x < diff.cols && next_x >= 0) {
                 // Whether the pixel is on the bottom of valley
-                if (dq[0]-2 > dq[1] && dq[1] >= dq[2] && dq[2] <= dq[3] && dq[3] < dq[4]-2) {
+                if (dq[0] > dq[1] && dq[1] > dq[2] && dq[2] >= dq[3] && dq[3] <= dq[4] && dq[4] < dq[5] && dq[5] < dq[6]) {
                     found = true;
                     break;
                 }
@@ -670,6 +780,7 @@ std::vector<std::vector<cv::Point2i> > LineDetection::detectValley(cv::Mat &img1
                 if (!opposite_lines) {
                     center = first_center;
                     next_direction = first_direction;
+                    prev_direction = first_direction;
                     opposite_lines = true;
                 } else {
                     break;
@@ -681,10 +792,34 @@ std::vector<std::vector<cv::Point2i> > LineDetection::detectValley(cv::Mat &img1
             dst.at<uchar>(line[i].y, line[i].x) = 255;
         }
         
+        
+        cv::imshow("diff", dst);
+        bool change = false;
+        while(true){
+            char key = cv::waitKey();
+            bool flag = false;
+            switch (key) {
+                case 'c':
+                    if (change) {
+                        cv::imshow("diff", dst);
+                    } else {
+                        cv::imshow("diff", blur);
+                    }
+                    change = !change;
+                    break;
+                default:
+                    flag = true;
+                    break;
+            }
+            if (flag) {
+                break;
+            }
+        }
+        
         if (opposite_lines && !found) {
             break;
         }
     }
-    
+    */
     return edges;
 }
