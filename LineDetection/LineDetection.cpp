@@ -466,6 +466,8 @@ void LineDetection::writeEdges(std::string filename)
 
 std::vector<std::vector<cv::Point2i> > LineDetection::detectValley(cv::Mat &img1, cv::Mat &img2)
 {
+
+    
     typedef enum {UpLeft, Up, UpRight, Left, Center, Right, DownLeft, Down, DownRight} Direction;
     int d2x[9] = {-1, 0, 1, -1, 0, 1, -1, 0, 1}; // Direction to which x coordination
     int d2y[9] = {-1, -1, -1, 0, 0, 0, 1, 1, 1}; // Direction to which y coordination
