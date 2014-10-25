@@ -722,10 +722,9 @@ std::vector<std::vector<std::vector<cv::Point2i> > > LineDetection::loadEdgeXML(
     doc.LoadFile(filename.c_str());
     tinyxml2::XMLElement *root = doc.FirstChildElement("edges");
     
-    double unit = atof(root->FirstChildElement("pixel_size")->GetText());
-    double f = atof(root->FirstChildElement("focal_length")->GetText()) / unit;
-    LineDetection::focal_length = f;
-    LineDetection::pixel_size = unit;
+    pixel_size = atof(root->FirstChildElement("pixel_size")->GetText());
+    focal_length = atof(root->FirstChildElement("focal_length")->GetText());
+
     
     img_size.width = atoi(root->FirstChildElement("width")->GetText());
     img_size.height = atoi(root->FirstChildElement("height")->GetText());
