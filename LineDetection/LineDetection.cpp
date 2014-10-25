@@ -30,15 +30,9 @@ void LineDetection::loadImageXML(std::string filename)
     
     const char *fl = root->FirstChildElement("focal_length")->GetText();
     focal_length = atof(fl);
-    tinyxml2::XMLElement *fl_elm = output.NewElement("focal_length");
-    fl_elm->SetText(fl);
-    output.RootElement()->InsertEndChild(fl_elm);
     
     const char *ps = root->FirstChildElement("pixel_size")->GetText();
     pixel_size = atof(ps);
-    tinyxml2::XMLElement *ps_elm = output.NewElement("pixel_size");
-    ps_elm->SetText(ps);
-    output.RootElement()->InsertEndChild(ps_elm);
     
     tinyxml2::XMLElement *node = root->FirstChildElement("pair");
     while (node) {
@@ -55,33 +49,19 @@ void LineDetection::loadImageXML(std::string filename)
         }
         if (count == 3|| count < 2 || count > 4) {
             std::cerr << "Unrecognized XML structure!" << std::endl;
-        }
-        else if (count == 4) {
+        } else if (count == 4) {
             p.type = Four;
         } else if (count == 2) {
             if (node->FirstChildElement("white") && node->FirstChildElement("black")) {
                 p.filenames[2] = std::string(node->FirstChildElement("white")->GetText());
                 p.filenames[3] = std::string(node->FirstChildElement("black")->GetText());
+            } else {
+                p.type = Two;
             }
-        } else {
-            p.type = Two;
         }
         image_names.push_back(p);
         node = node->NextSiblingElement("pair");
     }
-    
-    cv::Mat img = cv::imread(image_names[0].filenames[0]);
-    if (img.empty()) {
-        std::cerr << "Cannot open " << image_names[0].filenames[0] << std::endl;
-        exit(-1);
-    }
-    tinyxml2::XMLElement *width = output.NewElement("width");
-    width->SetText(img.cols);
-    output.RootElement()->InsertEndChild(width);
-    
-    tinyxml2::XMLElement *height = output.NewElement("height");
-    height->SetText(img.rows);
-    output.RootElement()->InsertEndChild(height);
     
 }
 
@@ -186,7 +166,7 @@ void LineDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2i
         int i = 0;
         for (std::vector<std::vector<cv::Point2i>>::iterator line = edges.begin(); line != edges.end(); ++line, ++i) {
             for (std::vector<cv::Point2i>::iterator point = line->begin(); point != line->end(); ++point) {
-                show.at<cv::Vec3b>(point->y, point->x) = color[i];
+                show.at<cv::Vec3b>(point->y, point->x) = color[i%30];
             }
         }
         //        image.copyTo(show);
@@ -277,6 +257,7 @@ void LineDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2i
             break;
         }
     }
+    cv::destroyWindow(name);
 }
 
 cv::Mat LineDetection::detectEdges(cv::Mat &image, cv::Mat &mask)
@@ -372,12 +353,12 @@ void LineDetection::processAllImages()
         switch (pair->type) {
             case Four:
                 for (int i = 0; i < 4; ++i) {
+                    std::cout << "Loading " << pair->filenames[i] << std::endl;
                     img[i] = cv::imread(pair->filenames[i], CV_LOAD_IMAGE_GRAYSCALE);
                     if (img[i].empty()) {
-                        std::cerr << "Cannot open " << pair->filenames[i] << std::endl;
+                        std::cerr << "Cannot open!" << pair->filenames[i] << std::endl;
                         exit(-1);
                     }
-                    std::cout << "Loading " << pair->filenames[i] << std::endl;
                 }
                 edges[0] = detectValley(img[0], img[1]);
                 display(cv::Size2i(img[0].cols, img[0].rows), edges[0], "edges");
@@ -387,12 +368,12 @@ void LineDetection::processAllImages()
                 
             case Two:
                 for (int i = 0; i < 2; ++i) {
+                    std::cout << "Loading " << pair->filenames[i] << std::endl;
                     img[i] = cv::imread(pair->filenames[i], CV_LOAD_IMAGE_GRAYSCALE);
                     if (img[i].empty()) {
-                        std::cerr << "Cannot open " << pair->filenames[i] << std::endl;
+                        std::cerr << "Cannot open!" << pair->filenames[i] << std::endl;
                         exit(-1);
                     }
-                    std::cout << "Loading " << pair->filenames[i] << std::endl;
                     cv::Canny(img[i], img[i], 50, 200);
                     edges[i] = extractEdges(img[i]);
                     display(cv::Size2i(img[i].cols, img[i].rows), edges[i], pair->filenames[i]);
@@ -401,12 +382,12 @@ void LineDetection::processAllImages()
                 
             case TwoBW:
                 for (int i = 0; i < 4; ++i) {
+                    std::cout << "Loading " << pair->filenames[i] << std::endl;
                     img[i] = cv::imread(pair->filenames[i], CV_LOAD_IMAGE_GRAYSCALE);
                     if (img[i].empty()) {
-                        std::cerr << "Cannot open " << pair->filenames[i] << std::endl;
+                        std::cerr << "Cannot open!" << pair->filenames[i] << std::endl;
                         exit(-1);
                     }
-                    std::cout << "Loading " << pair->filenames[i] << std::endl;
                 }
                 cv::Mat mask = makeMask(img[2], img[3]);
                 for (int i = 0; i < 2; ++i) {
@@ -419,6 +400,26 @@ void LineDetection::processAllImages()
         
         saveTwoEdges(edges[0], edges[1]);
     }
+}
+
+void LineDetection::saveParameters()
+{
+    tinyxml2::XMLElement *fl_elm = output.NewElement("focal_length");
+    fl_elm->SetText(focal_length);
+    output.RootElement()->InsertEndChild(fl_elm);
+    
+    
+    tinyxml2::XMLElement *ps_elm = output.NewElement("pixel_size");
+    ps_elm->SetText(pixel_size);
+    output.RootElement()->InsertEndChild(ps_elm);
+    
+    tinyxml2::XMLElement *width = output.NewElement("width");
+    width->SetText(img_size.width);
+    output.RootElement()->InsertEndChild(width);
+    
+    tinyxml2::XMLElement *height = output.NewElement("height");
+    height->SetText(img_size.height);
+    output.RootElement()->InsertEndChild(height);
 }
 
 // Save a pair of edges
@@ -459,7 +460,7 @@ void LineDetection::saveTwoEdges(std::vector<std::vector<cv::Point2i>>& first, s
     }
 }
 
-void LineDetection::writeEdges(std::string filename)
+void LineDetection::writeXML(std::string filename)
 {
     output.SaveFile(filename.c_str());
 }
@@ -492,9 +493,6 @@ std::vector<std::vector<cv::Point2i> > LineDetection::detectValley(cv::Mat &img1
         {UpLeft, Up, Left}  // DownRight
     };
     std::vector<std::vector<cv::Point2i> > edges;
-    Direction first_direction = Center;
-    Direction prev_direction = Center; // Previous direction to find next line
-    cv::Point2i first_center;
     
     uchar threshold = 10;
     cv::Mat mask, blur, diff = abs(img1 - img2);
@@ -713,4 +711,85 @@ dst.at<uchar>(y,x) = 200;
     }
 */
     return edges;
+}
+
+
+std::vector<std::vector<std::vector<cv::Point2i> > > LineDetection::loadEdgeXML(std::string filename)
+{
+    std::vector<std::vector<std::vector<cv::Point2i> > > all_edges;
+    
+    tinyxml2::XMLDocument doc;
+    doc.LoadFile(filename.c_str());
+    tinyxml2::XMLElement *root = doc.FirstChildElement("edges");
+    
+    double unit = atof(root->FirstChildElement("pixel_size")->GetText());
+    double f = atof(root->FirstChildElement("focal_length")->GetText()) / unit;
+    LineDetection::focal_length = f;
+    LineDetection::pixel_size = unit;
+    
+    img_size.width = atoi(root->FirstChildElement("width")->GetText());
+    img_size.height = atoi(root->FirstChildElement("height")->GetText());
+    
+    std::stringstream ssdata;
+    tinyxml2::XMLElement *pair = root->FirstChildElement("pair");
+    while (pair != NULL) {
+        
+        // edge1
+        tinyxml2::XMLElement *edge1_elm = pair->FirstChildElement("edge1");
+        tinyxml2::XMLElement *line_elm = edge1_elm->FirstChildElement("line");
+        std::vector<std::vector<cv::Point2i> > edge1;
+        while (line_elm != NULL) {
+            std::vector<cv::Point2i> line; // One line of points
+            tinyxml2::XMLElement *p = line_elm->FirstChildElement("p");
+            while (p != NULL) {
+                cv::Point2i point;
+                ssdata.str(p->GetText());
+                ssdata >> point.x;
+                ssdata >> point.y;
+                line.push_back(point);
+                ssdata.clear();
+                p = p->NextSiblingElement("p");
+            }
+            edge1.push_back(line);
+            line_elm = line_elm->NextSiblingElement("line");
+        }
+        all_edges.push_back(edge1);
+        
+        // edge2
+        tinyxml2::XMLElement *edge2_elm = pair->FirstChildElement("edge2");
+        line_elm = edge2_elm->FirstChildElement("line");
+        std::vector<std::vector<cv::Point2i> > edge2;
+        while (line_elm != NULL) {
+            std::vector<cv::Point2i> line; // One line of points
+            tinyxml2::XMLElement *p = line_elm->FirstChildElement("p");
+            while (p != NULL) {
+                cv::Point2d point;
+                ssdata.str(p->GetText());
+                ssdata >> point.x;
+                ssdata >> point.y;
+                line.push_back(point);
+                ssdata.clear();
+                p = p->NextSiblingElement("p");
+            }
+            edge2.push_back(line);
+            line_elm = line_elm->NextSiblingElement("line");
+        }
+        
+        all_edges.push_back(edge2);
+        pair = pair->NextSiblingElement("pair");
+    }
+
+    return all_edges;
+}
+
+
+void LineDetection::editAllEdges(std::vector<std::vector<std::vector<cv::Point2i> > > edges)
+{
+    std::vector<std::vector<cv::Point2i> > edge;
+    for (int i = 0; i < edges.size(); ++i) {
+        display(img_size, edges[i], "Edit");
+        if (i%2 == 1) {
+            saveTwoEdges(edges[i-1], edges[i]);
+        }
+    }
 }
