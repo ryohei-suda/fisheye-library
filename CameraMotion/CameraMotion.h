@@ -13,6 +13,7 @@
 
 class CameraMotion
 {
+public:
     void calcOpticalFlow(cv::Mat img1, cv::Mat img2);
 };
 
