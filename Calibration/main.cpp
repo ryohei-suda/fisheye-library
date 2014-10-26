@@ -11,11 +11,10 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
-//#include <Eigen/Core>
 #include <opencv2/opencv.hpp>
 #include "IncidentVector.h"
 #include "Pair.h"
-#include "tinyxml2.h"
+#include "../libs/tinyxml2.h"
 #include "Calibration.h"
 
 int main(int argc, const char * argv[])
