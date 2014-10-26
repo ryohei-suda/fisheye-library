@@ -183,7 +183,7 @@ void Calibration::calibrate()
             std::cout << "\tJ1_: " << j1 << "\tJ2_: " << j2 << "\tJ3_: " << j3 << std::endl;
             
             //    ( 6 ) ˜ J < J0 なら次へ進む．そうでなければC Ã 10C としてステップ(4) に戻る．
-            if ( J_  < J0) {
+            if ( J_  <= J0) {
                 this->save(std::string("parameters_") + std::to_string(iterations) + std::string(".xml"));
                 
                 std::cout << "Center:\t" << center_ << std::endl;
