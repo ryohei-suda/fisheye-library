@@ -16,9 +16,11 @@
 class IncidentVector
 {
 private:
-    static double f, f0;
-    static std::vector<double> a;
-    static cv::Point2d center;
+    static double f; // Focal length (pixel unit)
+    static double f0; // Scale constant
+    static std::vector<double> a; // Distortion parameters
+    static cv::Point2d center; // Optical center
+    static cv::Size2i img_size; // Image size
     double theta;
     double r;
     
@@ -32,11 +34,18 @@ public:
     static int nparam; // Number of parameters (u0, v0, f, a1, a2, ...)
     
     IncidentVector(cv::Point2d p);
-    static void setParameters(double f_s, double f0_s, std::vector<double> a_s, cv::Point2d c_s);
-    static void setF(double f_s);
-    static void setF0(double f0_s);
-    static void setA(std::vector<double> a_s);
-    static void setCenter(cv::Point2d c_s);
+    static void setParameters(double f, double f0, std::vector<double> a, cv::Size2i img_size, cv::Point2d center);
+    static void setF(double f);
+    static double getF();
+    static void setF0(double f0);
+    static double getF0();
+    static void setA(std::vector<double> a);
+    static void initA(int a_size);
+    static std::vector<double> getA();
+    static void setImgSize(cv::Size2i img_size);
+    static cv::Size2i getImgSize();
+    static void setCenter(cv::Point2d c);
+    static cv::Point2d getCenter();
     static int A(int);
     cv::Point3d calcDu();
     cv::Point3d calcDv();

@@ -12,6 +12,7 @@
 double IncidentVector::f, IncidentVector::f0;
 std::vector<double> IncidentVector::a;
 cv::Point2d IncidentVector::center;
+cv::Size2i IncidentVector::img_size;
 int IncidentVector::nparam = 3;
 
 IncidentVector::IncidentVector(cv::Point2d p)
@@ -44,38 +45,68 @@ void IncidentVector::aoi()
     theta *= f0 / f;
 }
 
-void IncidentVector::setParameters(double f_s, double f0_s, std::vector<double> a_s, cv::Point2d c_s)
+void IncidentVector::setParameters(double f, double f0, std::vector<double> a, cv::Size2i img_size, cv::Point2d center)
 {
-    f = f_s;
-    f0 = f0_s;
-    a = a_s;
-    center = c_s;
+    IncidentVector::f = f;
+    IncidentVector::f0 = f0;
+    IncidentVector::a = a;
+    IncidentVector::img_size = img_size;
+    IncidentVector::center = center;
     
     nparam = 3 + (int)a.size();
 }
 
 
-void IncidentVector::setF(double f_s)
+void IncidentVector::setF(double f)
 {
-    f = f_s;
+    IncidentVector::f = f;
+}
+double IncidentVector::getF()
+{
+    return IncidentVector::f;
 }
 
-void IncidentVector::setF0(double f0_s)
+void IncidentVector::setF0(double f0)
 {
-    f0 = f0_s;
+    IncidentVector::f0 = f0;
+}
+double IncidentVector::getF0()
+{
+    return IncidentVector::f0;
 }
 
-void IncidentVector::setA(std::vector<double> a_s)
+void IncidentVector::setA(std::vector<double> a)
 {
-    a = a_s;
-    
-    nparam = 3 + (int)a.size();
+    IncidentVector::a = a;
+    IncidentVector::nparam = 3 + (int)a.size();
+}
+void IncidentVector::initA(int a_size)
+{
+    std::vector<double> a(a_size, 0);
+    IncidentVector::a = a;
+    IncidentVector::nparam = 3 + a_size;
+}
+std::vector<double> IncidentVector::getA()
+{
+    return IncidentVector::a;
 }
 
-
-void IncidentVector::setCenter(cv::Point2d c_s)
+void IncidentVector::setImgSize(cv::Size2i img_size)
 {
-    center = c_s;
+    IncidentVector::img_size = img_size;
+}
+cv::Size2i IncidentVector::getImgSize()
+{
+    return IncidentVector::img_size;
+}
+
+void IncidentVector::setCenter(cv::Point2d c)
+{
+    IncidentVector::center = c;
+}
+cv::Point2d IncidentVector::getCenter()
+{
+    return IncidentVector::center;
 }
 
 
