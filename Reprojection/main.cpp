@@ -60,10 +60,10 @@ int main(int argc, const char * argv[])
     cv::Mat dst;
     cv::remap(src, dst, mapx, mapy, cv::INTER_LINEAR); // Rectify
     
-    cv::namedWindow("src", CV_GUI_NORMAL|CV_WINDOW_NORMAL|CV_WINDOW_KEEPRATIO);
+    cv::namedWindow("src");
     cv::imshow("src", src);
     cv::moveWindow("src", 0, 0);
-    cv::namedWindow("dst", CV_GUI_NORMAL|CV_WINDOW_NORMAL|CV_WINDOW_KEEPRATIO| CV_GUI_EXPANDED);
+    cv::namedWindow("dst");
     cv::imshow("dst", dst);
     cv::moveWindow("dst", 0, 0);
     cv::waitKey();
