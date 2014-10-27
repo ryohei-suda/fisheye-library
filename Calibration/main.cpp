@@ -11,25 +11,25 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
-#include <Eigen/Core>
 #include <opencv2/opencv.hpp>
 #include "IncidentVector.h"
 #include "Pair.h"
-#include "tinyxml2.h"
+#include "../libs/tinyxml2.h"
 #include "Calibration.h"
-
-#define A_SIZE 3
 
 int main(int argc, const char * argv[])
 {
     Calibration calib;
     
     std::string filename; // "/Users/ryohei/Dropbox/univ/lab/Images/data.dat"
-    std::cout << "Type filename> ";
+    std::cout << "Type filename > ";
     std::cin >> filename;
     calib.loadData(filename);
     IncidentVector::setF0(150);
-    IncidentVector::initA(A_SIZE);
+    std::cout << "Type corection degree > ";
+    int a_size;
+    std::cin >> a_size;
+    IncidentVector::initA(a_size);
     
     std::cout << "Orthogonal pairs: " << calib.edges.size() << std::endl;
     double lines = 0;

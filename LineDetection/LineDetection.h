@@ -13,17 +13,18 @@
 #include <iostream>
 #include <stdlib.h>
 #include <stdio.h>
-#include "tinyxml2.h"
+#include "../libs/tinyxml2.h"
 
 class LineDetection
 {
 private:
     double focal_length;
     double pixel_size;
+    cv::Size2i img_size;
     tinyxml2::XMLDocument output;
     
     
-    typedef struct {
+    typedef struct { // For the display function
         cv::Rect area;
         int status; // 0: Not selected 1: Selecting 2: Selected
         int width, height;
@@ -45,13 +46,15 @@ public:
     cv::Mat makeMask(cv::Mat& white, cv::Mat& black);
     void display(cv::Size2i size, std::vector<std::vector<cv::Point2i>>& edges, std::string name);
     cv::Mat detectEdges(cv::Mat& image, cv::Mat& mask);
-    std::vector<std::vector<cv::Point2i>> extractEdges(cv::Mat& image);
-    std::vector<std::vector<cv::Point2i>> clusteringEdges(std::vector<cv::Point2i> points);
+    std::vector<std::vector<cv::Point2i> > extractEdges(cv::Mat& image);
+    std::vector<std::vector<cv::Point2i> > clusteringEdges(std::vector<cv::Point2i> points);
     void processAllImages();
+    void saveParameters(); // Save parameters into XML output
     void saveTwoEdges(std::vector<std::vector<cv::Point2i>>& first, std::vector<std::vector<cv::Point2i>>& second);
-    void writeEdges(std::string filename);
+    void writeXML(std::string filename);
     std::vector<std::vector<cv::Point2i> > detectValley(cv::Mat &img1, cv::Mat &img2);
-    
+    std::vector<std::vector<std::vector<cv::Point2i> > > loadEdgeXML(std::string filename);
+    void editAllEdges(std::vector<std::vector<std::vector<cv::Point2i> > > edges);
 };
 
 #endif
