@@ -373,6 +373,7 @@ void LineDetection::processAllImages()
             case Four:
                 for (int i = 0; i < 4; ++i) {
                     img[i] = cv::imread(pair->filenames[i], CV_LOAD_IMAGE_GRAYSCALE);
+                    
                     if (img[i].empty()) {
                         std::cerr << "Cannot open " << pair->filenames[i] << std::endl;
                         exit(-1);
