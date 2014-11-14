@@ -14,6 +14,7 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
+#include <chrono>
 //#include <Eigen/Core>
 #include <opencv2/opencv.hpp>
 #include "IncidentVector.h"
@@ -37,7 +38,7 @@ public:
     void loadData(std::string);
     void save(std::string);
     
-    void calibrate(); // Do calibrate
+    void calibrate(bool divide); // Do calibrate
     
     
     //大文字の後に付いてるcは微分を表している
