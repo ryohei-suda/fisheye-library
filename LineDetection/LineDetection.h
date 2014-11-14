@@ -21,6 +21,7 @@ private:
     double focal_length;
     double pixel_size;
     cv::Size2i img_size;
+    std::string projection;
     tinyxml2::XMLDocument output;
     
     

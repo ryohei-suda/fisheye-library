@@ -34,6 +34,8 @@ void LineDetection::loadImageXML(std::string filename)
     const char *ps = root->FirstChildElement("pixel_size")->GetText();
     pixel_size = atof(ps);
     
+    projection = root->FirstChildElement("projection")->GetText();
+    
     tinyxml2::XMLElement *node = root->FirstChildElement("pair");
     while (node) {
         pair p;
@@ -420,6 +422,10 @@ void LineDetection::saveParameters()
     tinyxml2::XMLElement *height = output.NewElement("height");
     height->SetText(img_size.height);
     output.RootElement()->InsertEndChild(height);
+    
+    tinyxml2::XMLElement *proj = output.NewElement("projection");
+    proj->SetText(projection.c_str());
+    output.RootElement()->InsertEndChild(proj);
 }
 
 // Save a pair of edges
