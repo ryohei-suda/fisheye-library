@@ -18,6 +18,8 @@
 //#include <Eigen/Core>
 #include <opencv2/opencv.hpp>
 #include "IncidentVector.h"
+#include "EquidistanceProjection.h"
+#include "EquisolidAngleProjection.h"
 #include "Pair.h"
 #include "../libs/tinyxml2.h"
 

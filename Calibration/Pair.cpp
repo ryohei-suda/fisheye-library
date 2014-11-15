@@ -11,9 +11,9 @@
 void Pair::calcM()
 {
     for (int i = 0; i < 2; ++i) {
-        for (std::vector<std::vector<IncidentVector>>::iterator k = edge[i].begin();  k != edge[i].end(); ++k) { // For each line
-            for (std::vector<IncidentVector>::iterator alpha = k->begin(); alpha != k->end(); ++alpha) { // For each point
-                alpha->calcM();
+        for (std::vector<std::vector<IncidentVector *> >::iterator k = edge[i].begin();  k != edge[i].end(); ++k) { // For each line
+            for (std::vector<IncidentVector *>::iterator alpha = k->begin(); alpha != k->end(); ++alpha) { // For each point
+                (*alpha)->calcM();
             }
         }
     }
@@ -22,9 +22,9 @@ void Pair::calcM()
 void Pair::calcMd()
 {
     for (int i = 0; i < 2; ++i) {
-        for (std::vector<std::vector<IncidentVector>>::iterator line = edge[i].begin(); line != edge[i].end(); line++) {
-            for (std::vector<IncidentVector>::iterator point = line->begin(); point != line->end(); ++point) {
-                point->calcDerivatives();
+        for (std::vector<std::vector<IncidentVector *> >::iterator line = edge[i].begin(); line != edge[i].end(); line++) {
+            for (std::vector<IncidentVector *>::iterator point = line->begin(); point != line->end(); ++point) {
+                (*point)->calcDerivatives();
             }
         }
     }
@@ -36,10 +36,10 @@ void Pair::calcNormal()
         normalVector[i].clear();
         normalValue[i].clear();
             
-        for (std::vector<std::vector<IncidentVector>>::iterator k = edge[i].begin();  k != edge[i].end(); ++k) { // For each line
+        for (std::vector<std::vector<IncidentVector *> >::iterator k = edge[i].begin();  k != edge[i].end(); ++k) { // For each line
             cv::Mat Mk = cv::Mat::zeros(3, 3, CV_64F);
-            for (std::vector<IncidentVector>::iterator alpha = k->begin(); alpha != k->end(); ++alpha) { // For each point
-                cv::Mat m(alpha->m);
+            for (std::vector<IncidentVector *>::iterator alpha = k->begin(); alpha != k->end(); ++alpha) { // For each point
+                cv::Mat m((*alpha)->m);
                 Mk += m * m.t();
             }
             cv::Mat eigenValues, eigenVectors;
@@ -72,13 +72,13 @@ void Pair::calcMc()
     for (int i = 0; i < 2; ++i) {
         Mc[i].clear();
         
-        for (std::vector<std::vector<IncidentVector>>::iterator k = edge[i].begin(); k != edge[i].end() ; ++k) { // For each line
+        for (std::vector<std::vector<IncidentVector *> >::iterator k = edge[i].begin(); k != edge[i].end() ; ++k) { // For each line
             Pair::C c;
-            for (std::vector<IncidentVector>::iterator alpha = k->begin(); alpha != k->end(); ++alpha) { // For each point
+            for (std::vector<IncidentVector *>::iterator alpha = k->begin(); alpha != k->end(); ++alpha) { // For each point
                 
-                cv::Mat m(alpha->m);
+                cv::Mat m((*alpha)->m);
                 for (int j = 0; j < IncidentVector::nparam; ++j) {
-                    cv::Mat mc(alpha->derivatives[j]);
+                    cv::Mat mc((*alpha)->derivatives[j]);
                     c.ms[j] += mc * m.t();
                 }
             }
@@ -97,14 +97,14 @@ void Pair::calcMcc()
     for (int i = 0; i < 2; ++i) {
         Mcc[i].clear();
         
-        for (std::vector<std::vector<IncidentVector>>::iterator k = edge[i].begin(); k != edge[i].end() ; ++k) { // For each line
+        for (std::vector<std::vector<IncidentVector *> >::iterator k = edge[i].begin(); k != edge[i].end() ; ++k) { // For each line
             Pair::Cc cc;
-            for (std::vector<IncidentVector>::iterator alpha = k->begin(); alpha != k->end(); ++alpha) { // For each point
+            for (std::vector<IncidentVector *>::iterator alpha = k->begin(); alpha != k->end(); ++alpha) { // For each point
                 
                 for (int j = 0; j < IncidentVector::nparam; ++j) {
-                    cv::Mat mc1(alpha->derivatives[j]);
+                    cv::Mat mc1((*alpha)->derivatives[j]);
                     for(int l = 0; l < IncidentVector::nparam; ++l) {
-                        cv::Mat mc2(alpha->derivatives[l]);
+                        cv::Mat mc2((*alpha)->derivatives[l]);
                         cc.ms[j][l] += mc1 * mc2.t();
                     }
                 }

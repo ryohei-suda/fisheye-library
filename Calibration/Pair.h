@@ -48,7 +48,7 @@ public:
         }
     };
     
-    std::vector<std::vector<IncidentVector>> edge[2];
+    std::vector<std::vector<IncidentVector *> > edge[2];
     std::vector<cv::Mat> normalVector[2]; // n1:(0,0), n2:(1,0), n:(2, 0) at<cv::Point3d>(2,0)
     std::vector<cv::Mat> normalValue[2];
     cv::Mat lineVector[2];

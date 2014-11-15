@@ -34,8 +34,12 @@ void Calibration::loadData(std::string filename) {
     IncidentVector::setImgSize(img_size);
     IncidentVector::setCenter(center);
     
+    std::string projection = root->FirstChildElement("projection")->GetText();
+    IncidentVector::setProjection(projection);
+    
     std::stringstream ssdata;
     tinyxml2::XMLElement *pair = root->FirstChildElement("pair");
+    
     while (pair != NULL) {
         Pair tmp;
         
@@ -43,14 +47,27 @@ void Calibration::loadData(std::string filename) {
         tinyxml2::XMLElement *edge1 = pair->FirstChildElement("edge1");
         tinyxml2::XMLElement *line = edge1->FirstChildElement("line");
         while (line != NULL) {
-            std::vector<IncidentVector> edge; // One line of points
+            std::vector<IncidentVector *> edge; // One line of points
             tinyxml2::XMLElement *p = line->FirstChildElement("p");
             while (p != NULL) {
                 cv::Point2d point;
                 ssdata.str(p->GetText());
                 ssdata >> point.x;
                 ssdata >> point.y;
-                edge.push_back(*(new IncidentVector(point)));
+                switch (IncidentVector::getProjection()) {
+                    case 0:
+                        //TODO add Stereographic projection
+                        break;
+                    case 1:
+                        //TODO add Perspective projection
+                        break;
+                    case 2:
+                        edge.push_back(new EquidistanceProjection(point));
+                        break;
+                    case 3:
+                        edge.push_back(new EquisolidAngleProjection(point));
+                        break;
+                }
                 ssdata.clear();
                 p = p->NextSiblingElement("p");
             }
@@ -62,14 +79,27 @@ void Calibration::loadData(std::string filename) {
         tinyxml2::XMLElement *edge2 = pair->FirstChildElement("edge2");
         line = edge2->FirstChildElement("line");
         while (line != NULL) {
-            std::vector<IncidentVector> edge; // One line of points
+            std::vector<IncidentVector *> edge; // One line of points
             tinyxml2::XMLElement *p = line->FirstChildElement("p");
             while (p != NULL) {
                 cv::Point2d point;
                 ssdata.str(p->GetText());
                 ssdata >> point.x;
                 ssdata >> point.y;
-                edge.push_back(*(new IncidentVector(point)));
+                switch (IncidentVector::getProjection()) {
+                    case 0:
+                        //TODO add Stereographic projection
+                        break;
+                    case 1:
+                        //TODO add Perspective projection
+                        break;
+                    case 2:
+                        edge.push_back(new EquidistanceProjection(point));
+                        break;
+                    case 3:
+                        edge.push_back(new EquisolidAngleProjection(point));
+                        break;
+                }
                 ssdata.clear();
                 p = p->NextSiblingElement("p");
             }
@@ -85,6 +115,7 @@ void Calibration::loadData(std::string filename) {
 void Calibration::save(std::string filename)
 {
     cv::FileStorage fs_out(filename, cv::FileStorage::WRITE);
+    fs_out << "projection" << IncidentVector::getProjectionName();
     fs_out << "center" << IncidentVector::getCenter();
     fs_out << "img_size" << IncidentVector::getImgSize();
     fs_out << "f" << IncidentVector::getF();

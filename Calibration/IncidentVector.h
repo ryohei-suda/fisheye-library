@@ -13,9 +13,11 @@
 #include <cmath>
 #include <opencv2/core/core.hpp>
 
+#define PROJECTION_NUM 4
+
 class IncidentVector
 {
-private:
+protected:
     static double f; // Focal length (pixel unit)
     static double f0; // Scale constant
     static std::vector<double> a; // Distortion parameters
@@ -23,8 +25,8 @@ private:
     static cv::Size2i img_size; // Image size
     double theta;
     double r;
-    
-    void aoi();
+    static std::string projection_name[PROJECTION_NUM];
+    static int projection; //Projection Model
     
 public:
     cv::Point3d m;
@@ -47,13 +49,16 @@ public:
     static void setCenter(cv::Point2d c);
     static cv::Point2d getCenter();
     static int A(int);
-    cv::Point3d calcDu();
-    cv::Point3d calcDv();
-    cv::Point3d calcDf();
-    std::vector<cv::Point3d> calcDak();
+    static void setProjection(std::string projection);
+    static int getProjection();
+    static std::string getProjectionName();
     void calcDerivatives();
-    void calcM();
-    
-};
 
+    virtual void calcM() = 0;
+    virtual void aoi() = 0; // Calculate theta
+    virtual cv::Point3d calcDu() = 0;
+    virtual cv::Point3d calcDv() = 0;
+    virtual cv::Point3d calcDf() = 0;
+    virtual std::vector<cv::Point3d> calcDak() = 0;
+};
 #endif
