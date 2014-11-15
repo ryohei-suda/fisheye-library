@@ -43,6 +43,20 @@ void IncidentVector::setProjection(std::string projection)
     exit(4);
 }
 
+void IncidentVector::calcM()
+{
+    r = sqrt(pow(center.x-point.x, 2) + pow(center.y-point.y, 2));
+    aoi();
+    if (r != 0) {
+        m.x = ((point.x - center.x) / r) * sin(theta);
+        m.y = ((point.y - center.y) / r) * sin(theta);
+        m.z = cos(theta);
+    } else {
+        m.x = 0;
+        m.y = 0;
+        m.z = 1;
+    }
+}
 
 void IncidentVector::calcDerivatives()
 {

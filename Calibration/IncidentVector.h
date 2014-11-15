@@ -62,9 +62,8 @@ public:
     static int getProjection() { return projection; }
     static std::string getProjectionName() { return projection_name[projection]; }
     
-    
     void calcDerivatives();
-    virtual void calcM() = 0;
+    void calcM();
     virtual void aoi() = 0; // Calculate theta
     virtual cv::Point3d calcDu() = 0;
     virtual cv::Point3d calcDv() = 0;
