@@ -32,64 +32,6 @@ void IncidentVector::setParameters(double f, double f0, std::vector<double> a, c
     nparam = 3 + (int)a.size();
 }
 
-
-void IncidentVector::setF(double f)
-{
-    IncidentVector::f = f;
-}
-double IncidentVector::getF()
-{
-    return IncidentVector::f;
-}
-
-void IncidentVector::setF0(double f0)
-{
-    IncidentVector::f0 = f0;
-}
-double IncidentVector::getF0()
-{
-    return IncidentVector::f0;
-}
-
-void IncidentVector::setA(std::vector<double> a)
-{
-    IncidentVector::a = a;
-    IncidentVector::nparam = 3 + (int)a.size();
-}
-void IncidentVector::initA(int a_size)
-{
-    std::vector<double> a(a_size, 0);
-    IncidentVector::a = a;
-    IncidentVector::nparam = 3 + a_size;
-}
-std::vector<double> IncidentVector::getA()
-{
-    return IncidentVector::a;
-}
-
-void IncidentVector::setImgSize(cv::Size2i img_size)
-{
-    IncidentVector::img_size = img_size;
-}
-cv::Size2i IncidentVector::getImgSize()
-{
-    return IncidentVector::img_size;
-}
-
-void IncidentVector::setCenter(cv::Point2d c)
-{
-    IncidentVector::center = c;
-}
-cv::Point2d IncidentVector::getCenter()
-{
-    return IncidentVector::center;
-}
-
-int IncidentVector::A(int i)
-{
-    return 3 + i;
-}
-
 void IncidentVector::setProjection(std::string projection)
 {
     for (int i = 0; i < PROJECTION_NUM; ++i) {
@@ -101,15 +43,6 @@ void IncidentVector::setProjection(std::string projection)
     exit(4);
 }
 
-int IncidentVector::getProjection()
-{
-    return projection;
-}
-
-std::string IncidentVector::getProjectionName()
-{
-    return projection_name[projection];
-}
 
 void IncidentVector::calcDerivatives()
 {

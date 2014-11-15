@@ -36,24 +36,34 @@ public:
     static int nparam; // Number of parameters (u0, v0, f, a1, a2, ...)
     
     IncidentVector(cv::Point2d p);
+    
+    // Setter and getter
     static void setParameters(double f, double f0, std::vector<double> a, cv::Size2i img_size, cv::Point2d center);
-    static void setF(double f);
-    static double getF();
-    static void setF0(double f0);
-    static double getF0();
-    static void setA(std::vector<double> a);
-    static void initA(int a_size);
-    static std::vector<double> getA();
-    static void setImgSize(cv::Size2i img_size);
-    static cv::Size2i getImgSize();
-    static void setCenter(cv::Point2d c);
-    static cv::Point2d getCenter();
-    static int A(int);
+    static void setF(double f){ IncidentVector::f = f; }
+    static double getF() { return IncidentVector::f; }
+    static void setF0(double f0) { IncidentVector::f0 = f0; }
+    static double getF0() { return IncidentVector::f0; }
+    static void setA(std::vector<double> a) {
+        IncidentVector::a = a;
+        IncidentVector::nparam = 3 + (int)a.size();
+    }
+    static void initA(int a_size) {
+        std::vector<double> a(a_size, 0);
+        IncidentVector::a = a;
+        IncidentVector::nparam = 3 + a_size;
+    }
+    static std::vector<double> getA() { return IncidentVector::a; }
+    static void setImgSize(cv::Size2i img_size) { IncidentVector::img_size = img_size; }
+    static cv::Size2i getImgSize() { return IncidentVector::img_size; }
+    static void setCenter(cv::Point2d c) { IncidentVector::center = c; }
+    static cv::Point2d getCenter() { return IncidentVector::center; }
+    static int A(int i) { return 3 + i; }
     static void setProjection(std::string projection);
-    static int getProjection();
-    static std::string getProjectionName();
+    static int getProjection() { return projection; }
+    static std::string getProjectionName() { return projection_name[projection]; }
+    
+    
     void calcDerivatives();
-
     virtual void calcM() = 0;
     virtual void aoi() = 0; // Calculate theta
     virtual cv::Point3d calcDu() = 0;
@@ -61,4 +71,7 @@ public:
     virtual cv::Point3d calcDf() = 0;
     virtual std::vector<cv::Point3d> calcDak() = 0;
 };
+
+
+
 #endif
