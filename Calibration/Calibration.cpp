@@ -56,7 +56,7 @@ void Calibration::loadData(std::string filename) {
                 ssdata >> point.y;
                 switch (IncidentVector::getProjection()) {
                     case 0:
-                        //TODO add Stereographic projection
+                        edge.push_back(new StereographicProjection(point));
                         break;
                     case 1:
                         //TODO add Perspective projection
@@ -88,7 +88,7 @@ void Calibration::loadData(std::string filename) {
                 ssdata >> point.y;
                 switch (IncidentVector::getProjection()) {
                     case 0:
-                        //TODO add Stereographic projection
+                        edge.push_back(new StereographicProjection(point));
                         break;
                     case 1:
                         //TODO add Perspective projection
