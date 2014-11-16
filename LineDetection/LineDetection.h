@@ -13,6 +13,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stack>
 #include "../libs/tinyxml2.h"
 
 class LineDetection
