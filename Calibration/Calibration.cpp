@@ -34,8 +34,12 @@ void Calibration::loadData(std::string filename) {
     IncidentVector::setImgSize(img_size);
     IncidentVector::setCenter(center);
     
+    std::string projection = root->FirstChildElement("projection")->GetText();
+    IncidentVector::setProjection(projection);
+    
     std::stringstream ssdata;
     tinyxml2::XMLElement *pair = root->FirstChildElement("pair");
+    
     while (pair != NULL) {
         Pair tmp;
         
@@ -43,14 +47,27 @@ void Calibration::loadData(std::string filename) {
         tinyxml2::XMLElement *edge1 = pair->FirstChildElement("edge1");
         tinyxml2::XMLElement *line = edge1->FirstChildElement("line");
         while (line != NULL) {
-            std::vector<IncidentVector> edge; // One line of points
+            std::vector<IncidentVector *> edge; // One line of points
             tinyxml2::XMLElement *p = line->FirstChildElement("p");
             while (p != NULL) {
                 cv::Point2d point;
                 ssdata.str(p->GetText());
                 ssdata >> point.x;
                 ssdata >> point.y;
-                edge.push_back(*(new IncidentVector(point)));
+                switch (IncidentVector::getProjection()) {
+                    case 0:
+                        edge.push_back(new StereographicProjection(point));
+                        break;
+                    case 1:
+                        //TODO add Perspective projection
+                        break;
+                    case 2:
+                        edge.push_back(new EquidistanceProjection(point));
+                        break;
+                    case 3:
+                        edge.push_back(new EquisolidAngleProjection(point));
+                        break;
+                }
                 ssdata.clear();
                 p = p->NextSiblingElement("p");
             }
@@ -62,14 +79,27 @@ void Calibration::loadData(std::string filename) {
         tinyxml2::XMLElement *edge2 = pair->FirstChildElement("edge2");
         line = edge2->FirstChildElement("line");
         while (line != NULL) {
-            std::vector<IncidentVector> edge; // One line of points
+            std::vector<IncidentVector *> edge; // One line of points
             tinyxml2::XMLElement *p = line->FirstChildElement("p");
             while (p != NULL) {
                 cv::Point2d point;
                 ssdata.str(p->GetText());
                 ssdata >> point.x;
                 ssdata >> point.y;
-                edge.push_back(*(new IncidentVector(point)));
+                switch (IncidentVector::getProjection()) {
+                    case 0:
+                        edge.push_back(new StereographicProjection(point));
+                        break;
+                    case 1:
+                        //TODO add Perspective projection
+                        break;
+                    case 2:
+                        edge.push_back(new EquidistanceProjection(point));
+                        break;
+                    case 3:
+                        edge.push_back(new EquisolidAngleProjection(point));
+                        break;
+                }
                 ssdata.clear();
                 p = p->NextSiblingElement("p");
             }
@@ -85,6 +115,7 @@ void Calibration::loadData(std::string filename) {
 void Calibration::save(std::string filename)
 {
     cv::FileStorage fs_out(filename, cv::FileStorage::WRITE);
+    fs_out << "projection" << IncidentVector::getProjectionName();
     fs_out << "center" << IncidentVector::getCenter();
     fs_out << "img_size" << IncidentVector::getImgSize();
     fs_out << "f" << IncidentVector::getF();
@@ -98,9 +129,10 @@ void Calibration::save(std::string filename)
     
 }
 
-void Calibration::calibrate()
+void Calibration::calibrate(bool divide)
 {
-     this->save(std::string("parameters_00"".xml"));
+    const auto start_time = std::chrono::system_clock::now();
+    
     for (std::vector<Pair>::iterator pair = edges.begin(); pair != edges.end(); ++pair) {
         pair->calcM();
         pair->calcNormal();
@@ -110,9 +142,12 @@ void Calibration::calibrate()
     gamma[0] = J1();
     gamma[1] = J2();
     gamma[2] = J3();
-//    J0 = gamma[0] / gamma[0] + gamma[1] / gamma[1] + gamma[2] / gamma[2];
-    J0 = gamma[0] + gamma[1] + gamma[2];
     std::cout << "J1  \t" << gamma[0] << "\nJ2  \t" << gamma[1] << "\nJ3  \t" << gamma[2] << std::endl;
+    if (divide) {
+        J0 = gamma[0] / gamma[0] + gamma[1] / gamma[1] + gamma[2] / gamma[2];
+    } else {
+        J0 = gamma[0] + gamma[1] + gamma[2];
+    }
     std::cout << "======================================" << std::endl;
     
     int iterations = 0;
@@ -135,12 +170,16 @@ void Calibration::calibrate()
         for (int i = 0; i < IncidentVector::nparam; ++i) {
             for (int j = 0; j < IncidentVector::nparam; ++j) {
                 // (1+C) isn't calculated here, look at the next while loop
-//                left.at<double>(i, j) = J1cc(i, j) / gamma[0] + J2cc(i, j) / gamma[1] + J3cc(i, j) / gamma[2];
-                left.at<double>(i, j) = J1cc(i, j) + J2cc(i, j) + J3cc(i, j);
+                if (divide) {
+                    left.at<double>(i, j) = J1cc(i, j) / gamma[0] + J2cc(i, j) / gamma[1] + J3cc(i, j) / gamma[2];
+                    right.at<double>(i) = J1c(i) / gamma[0] + J2c(i) / gamma[1] + J3c(i) / gamma[2];
+                } else {
+                    left.at<double>(i, j) = J1cc(i, j) + J2cc(i, j) + J3cc(i, j);
+                    right.at<double>(i) = J1c(i) + J2c(i) + J3c(i);
+                }
             }
-//            right.at<double>(i) = J1c(i) / gamma[0] + J2c(i) / gamma[1] + J3c(i) / gamma[2];
-            right.at<double>(i) = J1c(i) + J2c(i) + J3c(i);
         }
+        std::cout << left << '\n' << right << std::endl;
         
         
         cv::Mat delta;
@@ -154,7 +193,9 @@ void Calibration::calibrate()
             //    ( 4 ) 次の連立1次方程式を解いてΔu0, Δv0, Δf, Δa1, ... を計算する．
             cv::solve(left.mul(cmat), -right, delta);
 //            cv::solve(left.mul(cmat), right, delta);
-            std::cout << "------------------------ Iteration #: "<< iterations << " -------------------------" << std::endl;
+//            std::cout << left << std::endl;
+//            std::cout << right << std::endl;
+            std::cout << "------------------------ Iteration "<< iterations << " -------------------------" << std::endl;
             std::cout << "Delta: " << delta << std::endl;
             
             //    ( 5 ) 次のように˜u0, ˜v0, ˜ f, ˜a1, a2, ... を計算し，それに対するJ の値を˜ J とする．
@@ -177,15 +218,16 @@ void Calibration::calibrate()
             }
             
             double j1 = J1(), j2 = J2(), j3 = J3();
-//            J_ =  j1 / gamma[0] + j2 / gamma[1] + j3 / gamma[2];
-            J_ = j1 + j2 + j3;
+            if (divide) {
+                J_ =  j1 / gamma[0] + j2 / gamma[1] + j3 / gamma[2];
+            } else {
+                J_ = j1 + j2 + j3;
+            }
             std::cout << "C: " << C << "\tJ0: " << J0 << "\tJ_: " << J_;
             std::cout << "\tJ1_: " << j1 << "\tJ2_: " << j2 << "\tJ3_: " << j3 << std::endl;
             
             //    ( 6 ) ˜ J < J0 なら次へ進む．そうでなければC Ã 10C としてステップ(4) に戻る．
             if ( J_  <= J0) {
-                this->save(std::string("parameters_") + std::to_string(iterations) + std::string(".xml"));
-                
                 std::cout << "Center:\t" << center_ << std::endl;
                 std::cout << "     f:\t" << f_ << std::endl;
                 for (int i = 0; i < a_.size(); ++i) {
@@ -221,6 +263,9 @@ void Calibration::calibrate()
             C /= 10.0;
         }
     }
+    
+    const auto duration = std::chrono::system_clock::now() - start_time;
+    std::cout << "Calibration has been finished in " << std::chrono::duration_cast<std::chrono::seconds>(duration).count() << " seconds" << std::endl;
 }
 
 double Calibration::J1()
@@ -337,17 +382,8 @@ double Calibration::J3()
 {
     double j3 = 0;
     
-//    cv::Mat test = cv::Mat::zeros(960, 1280, CV_8UC1);
-    
     for (std::vector<Pair>::iterator pair = edges.begin(); pair != edges.end(); ++pair) {
         j3 += pow((pair->lineVector[0].row(2)).dot(pair->lineVector[1].row(2)), 2);
-        
-//        std::cout << pair->lineVector[0].row(2) << "\t" << pair->lineVector[1].row(2) << "\t" << pow((pair->lineVector[0].row(2).t()).dot(pair->lineVector[1].row(2).t()), 2) << std::endl;
-//        cv::line(test, center, center+100*cv::Point2d(pair->lineVector[0].row(2).at<double>(0),pair->lineVector[0].row(2).at<double>(1)), 255);
-//        cv::line(test, center, center+100*cv::Point2d(pair->lineVector[1].row(2).at<double>(0),pair->lineVector[0].row(2).at<double>(1)), 255);
-//        std::cout << pair->lineVector[0].row(2) * 10 << "\t" << pair->lineVector[1].row(2) * 10 << std::endl;
-//        cv::imshow("test", test);
-//        cv::waitKey();
     }
     
     return j3;

@@ -12,6 +12,11 @@
 void Reprojection::loadPrameters(std::string filename)
 {
     cv::FileStorage fs(filename, cv::FileStorage::READ);
+    
+    if (!fs.isOpened()) {
+        std::cerr << filename << " cannnot be opened!" << std::endl;
+        exit(-1);
+    }
     fs["f"] >> f;
     fs["f0"] >> f0;
     fs["center"] >> center;
