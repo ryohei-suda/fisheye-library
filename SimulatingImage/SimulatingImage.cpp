@@ -34,7 +34,8 @@ void SimulatingImage::calcCorners() {
         units[i] = corners[0] - corners[i+1];
     }
     
-    norm = units[1].cross(units[0]) * (1./(pattern_size.width*pattern_size.height));
+    norm = units[1].cross(units[0]);
+    norm *= (1./norm.ddot(norm));
 }
 
 cv::Point3d SimulatingImage::getRay(cv::Point2d point, int model) {
@@ -95,7 +96,7 @@ double SimulatingImage::calcT(cv::Point3d p) {
 }
 
 
-cv::Mat SimulatingImage::projectPlane() {
+cv::Mat SimulatingImage::projectPlane(int pattern) {
     
     cv::Mat img = cv::Mat::zeros(img_size.height, img_size.width, CV_8UC1);
     
@@ -109,7 +110,61 @@ cv::Mat SimulatingImage::projectPlane() {
                 double s = calcS(p);
                 double t = calcT(p);
                 if (0 <= s && s <= 1 && 0 <= t && t <= 1) {
-                    img.at<uchar>(y,x) = 255;
+                    double step;
+                    switch (pattern) {
+                        case 0: // check
+                            step = interval / pattern_size.width;
+                            for (int i = 0; 2*i*step <= 1.0; ++i) {
+                                if (step*(2*i) <= s && s <= step*(2*i+1)) {
+                                    img.at<uchar>(y,x) = 255;
+                                    break;
+                                }
+                            }
+                            step = interval / pattern_size.height;
+                            for (int i = 0; 2*i*step <= 1.0; ++i) {
+                                if (step*(2*i) <= t && t <= step*(2*i+1)) {
+                                    img.at<uchar>(y,x) = abs(img.at<uchar>(y,x)-255);
+                                    break;
+                                }
+                            }
+                            break;
+                        case 1: // vertical strip
+                            step = interval / pattern_size.width;
+                            for (int i = 0; 2*i*step <= 1.0; ++i) {
+                                if (step*(2*i) <= s && s <= step*(2*i+1)) {
+                                    img.at<uchar>(y,x) = 255;
+                                    break;
+                                }
+                            }
+                            break;
+                        case 2: // inverse of 1
+                            step = interval / pattern_size.width;
+                            for (int i = 0; (2*i+1)*step <= 1.0; ++i) {
+                                if (step*(2*i+1) <= s && s <= step*(2*i+2)) {
+                                    img.at<uchar>(y,x) = 255;
+                                    break;
+                                }
+                            }
+                            break;
+                        case 3: // horizontal strip
+                            step = interval / pattern_size.height;
+                            for (int i = 0; 2*i*step <= 1.0; ++i) {
+                                if (step*(2*i) <= t && t <= step*(2*i+1)) {
+                                    img.at<uchar>(y,x) = 255;
+                                    break;
+                                }
+                            }
+                            break;
+                        case 4: // inverse of 3
+                            step = interval / pattern_size.height;
+                            for (int i = 0; (2*i+1)*step <= 1.0; ++i) {
+                                if (step*(2*i+1) <= t && t <= step*(2*i+2)) {
+                                    img.at<uchar>(y,x) = 255;
+                                    break;
+                                }
+                            }
+                            break;
+                    }
                 }
             }
         }
@@ -118,99 +173,127 @@ cv::Mat SimulatingImage::projectPlane() {
     return img;
 }
 
+void onMouse(int event, int x, int y, int flag, void* data)
+{
+    SimulatingImage * si = (SimulatingImage *)(data);
+    switch (event) {
+        case CV_EVENT_LBUTTONDBLCLK:
+            cv::Point3d ray = si->getRay(cv::Point2d(x,y), 0);
+            cv::Point3d p = si->calcCrossPoint(ray);
+            double s = si->calcS(p);
+            double t = si->calcT(p);
+            std::cout << si->isCross(ray) <<  ' ' << s << ", " << t << std::endl;
+            break;
+    }
+}
+
 void SimulatingImage::display() {
     cv::Mat img;
     cv::namedWindow("Simulation Image", CV_WINDOW_NORMAL);
     char key;
+    int counter = 0;
+    int times = 1;
     
+    std::cout << "[Usage]" << std::endl;
+    std::cout << "\t(r, f, v): Add x, y, or z" << std::endl;
+    std::cout << "\t(e, d, c): Sub x, y, or z" << std::endl;
+    std::cout << "\t(u, j, m): Add Rolling, Piching, or Yawing" << std::endl;
+    std::cout << "\t(i, k, ,): Sub Rolling, Piching, or Yawing" << std::endl;
+    std::cout << "\t( 1 ~ 9 ): Set steps to 10 ~ 90 times" << std::endl;
+    std::cout << "\t(   0   ): Set steps to initial (1 pixel or 0.5 degree)" << std::endl;
+    std::cout << "\t( SPACE ): Save patterns" << std::endl;
+    std::cout << "\t(  ESC  ): End" << std::endl;
+    std::cout << "\n(x, y, z, Rolling, Piching, Yawing)" << std::endl;
     while (true) {
-        img = projectPlane();
+        std::cout << "("  << pattern_center.x << ", " << pattern_center.y <<  ", " << pattern_center.z << ", " << pitch[0] << ", " << pitch[1] << ", " << pitch[2] << ")" << std::endl;
+        img = projectPlane(0);
         cv::imshow("Simulation Image", img);
+        cv::setMouseCallback("Simulation Image", onMouse, this);
         key = cv::waitKey();
-        
-        if (key == 27) { // ESC
-            break;
-        }
+
         switch (key) {
             case 'r':
-                ++ pattern_center.x;
+                pattern_center.x += times;
                 break;
             case 'f':
-                ++ pattern_center.y;
+                pattern_center.y += times;
                 break;
             case 'v':
-                ++ pattern_center.z;
-                break;
-            case 't':
-                pattern_center.x += 10;
-                break;
-            case 'g':
-                pattern_center.y += 10;
-                break;
-            case 'b':
-                pattern_center.z += 10;
+                pattern_center.z += times;
                 break;
             case 'e':
-                -- pattern_center.x;
+                pattern_center.x -= times;
                 break;
             case 'd':
-                -- pattern_center.y;
+                pattern_center.y -= times;
                 break;
             case 'c':
-                -- pattern_center.z;
-                break;
-            case 'w':
-                pattern_center.x -= 10;
-                break;
-            case 's':
-                pattern_center.y -= 10;
-                break;
-            case 'x':
-                pattern_center.z -= 10;
+                pattern_center.z -= times;
                 break;
             case 'u':
-                pitch[0] += d2r(0.5);
+                pitch[0] += d2r(0.5*times);
                 break;
             case 'j':
-                pitch[1] += d2r(0.5);
+                pitch[1] += d2r(0.5*times);
                 break;
             case 'm':
-                pitch[2] += d2r(0.5);
-                break;
-            case 'y':
-                pitch[0] += d2r(5);
-                break;
-            case 'h':
-                pitch[1] += d2r(5);
-                break;
-            case 'n':
-                pitch[2] += d2r(5);
+                pitch[2] += d2r(0.5*times);
                 break;
             case 'i':
-                pitch[0] -= d2r(0.5);
+                pitch[0] -= d2r(0.5*times);
                 break;
             case 'k':
-                pitch[1] -= d2r(0.5);
+                pitch[1] -= d2r(0.5*times);
                 break;
             case ',':
-                pitch[2] -= d2r(0.5);
+                pitch[2] -= d2r(0.5*times);
                 break;
-            case 'o':
-                pitch[0] -= d2r(5);
+            case '1':
+                times = 10;
                 break;
-            case 'l':
-                pitch[1] -= d2r(5);
+            case '2':
+                times = 20;
                 break;
-            case '.':
-                pitch[2] -= d2r(5);
+            case '3':
+                times = 30;
                 break;
-            default:
+            case '4':
+                times = 40;
+                break;
+            case '5':
+                times = 50;
+                break;
+            case '6':
+                times = 60;
+                break;
+            case '7':
+                times = 70;
+                break;
+            case '8':
+                times = 80;
+                break;
+            case '9':
+                times = 90;
+                break;
+            case '0':
+                times = 1;
+                break;
+            case 32: // space
+                std::cout << "Saved";
+                for (int i = 1; i <= 4; ++i) {
+                    img = projectPlane(i);
+                    std::ostringstream sout;
+                    sout << std::setfill('0') << std::setw(3) << counter << ".png";
+                    cv::imwrite(sout.str(), img);
+                    std::cout << " " << sout.str();
+                    ++counter;
+                }
+                std::cout << std::endl;
+                break;
+            case 27: // ESC
                 break;
         }
     }
 }
-
-
-
 
 

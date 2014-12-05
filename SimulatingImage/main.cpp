@@ -22,6 +22,7 @@ int main(int argc, const char * argv[]) {
     si.setImgSize(1960, 1280);
     std::vector<double> a(0);
     si.setA(a);
+    si.setInterval(50);
     
     si.display();
     

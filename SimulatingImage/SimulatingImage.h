@@ -11,6 +11,10 @@
 
 #include <cmath>
 #include <vector>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <iomanip>
 #include <opencv2/opencv.hpp>
 
 class SimulatingImage
@@ -81,7 +85,7 @@ public:
     double calcS(cv::Point3d p);
     double calcT(cv::Point3d p);
     
-    cv::Mat projectPlane();
+    cv::Mat projectPlane(int pattern); // (pattern) 0: check, 1: vertical strip, 2: inverse of 1, 3: horizontal strip, 4: inverse of 3
     void display();
 };
 
