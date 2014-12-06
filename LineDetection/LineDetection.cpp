@@ -36,6 +36,9 @@ void LineDetection::loadImageXML(std::string filename)
     
     projection = root->FirstChildElement("projection")->GetText();
     
+    img_size.width = atoi(root->FirstChildElement("width")->GetText());
+    img_size.height = atoi(root->FirstChildElement("height")->GetText());
+    
     tinyxml2::XMLElement *node = root->FirstChildElement("pair");
     while (node) {
         pair p;
