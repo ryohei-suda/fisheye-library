@@ -16,11 +16,22 @@ void SimulatingImage::calcCorners() {
     inital_corners[2] = (cv::Mat_<double>(3,1) << pattern_size.width/2., -pattern_size.height/2.,0);
     inital_corners[3] = (cv::Mat_<double>(3,1) << pattern_size.width/2., pattern_size.height/2.,0);
    
-    cv::Mat rotation = (cv::Mat_<double>(3,3) <<
-                        cos(pitch[0])*cos(pitch[1]), cos(pitch[0])*sin(pitch[1])*sin(pitch[2])-sin(pitch[1])*cos(pitch[2]), cos(pitch[0])*sin(pitch[1])*cos(pitch[2])+sin(pitch[0])*sin(pitch[2]),
-                        sin(pitch[0])*cos(pitch[1]), sin(pitch[0])*sin(pitch[1])*sin(pitch[2])+cos(pitch[0])*cos(pitch[2]), sin(pitch[0])*sin(pitch[1])*cos(pitch[2])-cos(pitch[0])*sin(pitch[2]),
-                        -sin(pitch[2]), cos(pitch[1])*sin(pitch[2]), cos(pitch[1])*cos(pitch[2])
-                        );
+    cv::Mat rotation_x = (cv::Mat_<double>(3,3) <<
+                          1, 0, 0,
+                          0, cos(pitch[2]), -sin(pitch[2]),
+                          0, sin(pitch[2]), cos(pitch[2])
+                          );
+    cv::Mat rotation_y = (cv::Mat_<double>(3,3) <<
+                          cos(pitch[1]), 0, sin(pitch[1]),
+                          0, 1, 0,
+                          -sin(pitch[1]), 0, cos(pitch[1])
+                          );
+    cv::Mat rotation_z = (cv::Mat_<double>(3,3) <<
+                          cos(pitch[0]), -sin(pitch[0]), 0,
+                          sin(pitch[0]), cos(pitch[0]), 0,
+                          0, 0, 1
+                          );
+    cv::Mat rotation = rotation_z * rotation_y * rotation_x;
     cv::Mat translation = cv::Mat(pattern_center);
     
     for (int i = 0; i < 4; ++i) {
@@ -193,6 +204,7 @@ void SimulatingImage::display() {
     char key;
     int counter = 0;
     int times = 1;
+    bool print = true;
     
     std::cout << "[Usage]" << std::endl;
     std::cout << "\t(r, f, v): Add x, y, or z" << std::endl;
@@ -205,12 +217,18 @@ void SimulatingImage::display() {
     std::cout << "\t(  ESC  ): End" << std::endl;
     std::cout << "\n(x, y, z, Rolling, Piching, Yawing)" << std::endl;
     while (true) {
-        std::cout << "("  << pattern_center.x << ", " << pattern_center.y <<  ", " << pattern_center.z << ", " << pitch[0] << ", " << pitch[1] << ", " << pitch[2] << ")" << std::endl;
+        if (print) {
+            std::cout << "("  << pattern_center.x << ", " << pattern_center.y <<  ", " << pattern_center.z << ", " << pitch[0] << ", " << pitch[1] << ", " << pitch[2] << ")" << std::endl;
+        }
+        print = true;
         img = projectPlane(0);
         cv::imshow("Simulation Image", img);
         cv::setMouseCallback("Simulation Image", onMouse, this);
         key = cv::waitKey();
 
+        if (key == 27) { // ESC
+            break;
+        }
         switch (key) {
             case 'r':
                 pattern_center.x += times;
@@ -284,13 +302,15 @@ void SimulatingImage::display() {
                     img = projectPlane(i);
                     std::ostringstream sout;
                     sout << std::setfill('0') << std::setw(3) << counter << ".png";
+                    cv::GaussianBlur(img, img, cv::Size(5,5), 1);
                     cv::imwrite(sout.str(), img);
                     std::cout << " " << sout.str();
                     ++counter;
                 }
                 std::cout << std::endl;
                 break;
-            case 27: // ESC
+            default:
+                print = false;
                 break;
         }
     }

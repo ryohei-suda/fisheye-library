@@ -15,14 +15,19 @@ int main(int argc, const char * argv[]) {
     
     si.setPatternSize(1200, 900);
     si.setPatternCenter(0, 0, 200);
+    si.setInterval(50);
     si.setPitchRadian(0, 0, 0);
-    si.setOpticalCenter(980, 640);
+    si.setImgSize(1900, 1200);
+    si.setOpticalCenter(954, 597);
     si.setFocalLength(400);
     si.setF0(400);
-    si.setImgSize(1960, 1280);
-    std::vector<double> a(0);
+    std::vector<double> a;
+    a.push_back(0.0001);
+    a.push_back(0.00002);
+    a.push_back(0.000003);
+    a.push_back(0.0000004);
+    a.push_back(0.00000005);
     si.setA(a);
-    si.setInterval(50);
     
     si.display();
     
