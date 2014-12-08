@@ -58,7 +58,7 @@ void Reprojection::theta2radius()
         theta[i] *= f0/f;
     }
     
-    std::ofstream ofs("graph.dat");
+
     int r_size = max_r * precision + 10;
     r.resize(r_size);
     int j = 1; // j/PRECISION: radius
@@ -68,12 +68,20 @@ void Reprojection::theta2radius()
         for (; j < theta_size; ++j) {
             if (theta[j] > rad) {
                 r[i] = ((i*rad_step - theta[j-1]) / (theta[j]-theta[j-1]) + j-1) / precision; // See my note on 2014/6/6
-                //                std::cout << "(i,j): ("<< i << "," << j << ")\t" << theta[j] << "\t" << rad << "\t" << r[i] << std::endl;
-                ofs << rad * 180 / M_PI << ' ' << rad << ' ' << r[i] << ' ' << f * rad << std::endl;
                 break;
             }
         }
     }
+}
+
+void Reprojection::saveRadiusTheta(std::string filename)
+{
+    std::ofstream ofs(filename);
+    
+    for (int i = 0; i < r.size(); ++i) {
+        ofs << r[i] << ' ' << rad_step * i << ' ' << rad_step * i * 180 / M_PI << std::endl;
+    }
+    
     ofs.close();
 }
 

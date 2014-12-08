@@ -15,9 +15,17 @@
 
 int main(int argc, const char * argv[])
 {
+    for (int i = 1; i < argc; ++i) {
+        Reprojection reproj;
+        std::string fname(argv[i]);
+        reproj.loadPrameters(fname);
+        reproj.theta2radius();
+        fname.replace(fname.size()-3, fname.size(), "dat");
+        reproj.saveRadiusTheta(fname);
+    }
+    
     Reprojection reproj;
     double f_;
-    
 
     std::string param;
     std::cout << "Type parameter file name > ";
@@ -60,10 +68,10 @@ int main(int argc, const char * argv[])
     cv::Mat dst;
     cv::remap(src, dst, mapx, mapy, cv::INTER_LINEAR); // Rectify
     
-    cv::namedWindow("src");
+    cv::namedWindow("src", CV_GUI_NORMAL);
     cv::imshow("src", src);
     cv::moveWindow("src", 0, 0);
-    cv::namedWindow("dst");
+    cv::namedWindow("dst", CV_GUI_NORMAL);
     cv::imshow("dst", dst);
     cv::moveWindow("dst", 0, 0);
     cv::waitKey();
