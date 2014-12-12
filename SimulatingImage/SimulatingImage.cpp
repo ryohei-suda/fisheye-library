@@ -80,6 +80,11 @@ cv::Point3d SimulatingImage::getRay(cv::Point2d point, int model) {
 }
 
 bool SimulatingImage::isCross(cv::Point3d ray) {
+    
+    if (acos(ray.z) > fov) {
+        return false;
+    }
+    
     double cosine = ray.ddot(norm);
     if (0. < cosine  && cosine <= 1.) {
         return true;
@@ -249,52 +254,55 @@ void SimulatingImage::display() {
                 pattern_center.z -= times;
                 break;
             case 'u':
-                pitch[0] += d2r(0.5*times);
+                pitch[0] += d2r(0.1*times);
                 break;
             case 'j':
-                pitch[1] += d2r(0.5*times);
+                pitch[1] += d2r(0.1*times);
                 break;
             case 'm':
-                pitch[2] += d2r(0.5*times);
+                pitch[2] += d2r(0.1*times);
                 break;
             case 'i':
-                pitch[0] -= d2r(0.5*times);
+                pitch[0] -= d2r(0.1*times);
                 break;
             case 'k':
-                pitch[1] -= d2r(0.5*times);
+                pitch[1] -= d2r(0.1*times);
                 break;
             case ',':
-                pitch[2] -= d2r(0.5*times);
+                pitch[2] -= d2r(0.1*times);
                 break;
             case '1':
-                times = 10;
+                times = 1;
                 break;
             case '2':
-                times = 20;
-                break;
-            case '3':
-                times = 30;
-                break;
-            case '4':
                 times = 40;
                 break;
-            case '5':
-                times = 50;
-                break;
-            case '6':
+            case '3':
                 times = 60;
                 break;
-            case '7':
-                times = 70;
-                break;
-            case '8':
+            case '4':
                 times = 80;
                 break;
-            case '9':
-                times = 90;
+            case '5':
+                times = 100;
                 break;
-            case '0':
-                times = 1;
+            case '6':
+                times = 120;
+                break;
+            case '7':
+                times = 140;
+                break;
+            case '8':
+                times = 160;
+                break;
+            case '9':
+                times = 180;
+                break;
+            case '0': // Reset
+                pattern_center.x = pattern_center.y = 0;
+                pattern_center.z = 200;
+                pitch[0] = pitch[1] = pitch[2] = 0;
+                
                 break;
             case 32: // space
                 std::cout << "Saved";
