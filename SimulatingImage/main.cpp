@@ -13,9 +13,9 @@ int main(int argc, const char * argv[]) {
     
     SimulatingImage si;
     
-    si.setPatternSize(1920, 1080);
-    si.setPatternCenter(0, 0, 200);
-    si.setInterval(40);
+    si.setPatternSize(5000, 4000);
+    si.setPatternCenter(0, 0, 1000);
+    si.setInterval(250);
     si.setPitchRadian(0, 0, 0);
     si.setImgSize(1600, 1200);
     si.setOpticalCenter(805, 597);

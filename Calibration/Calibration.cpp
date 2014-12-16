@@ -18,12 +18,15 @@ void Calibration::loadData(std::string filename) {
     edges.clear();
     
     tinyxml2::XMLDocument doc;
-    doc.LoadFile(filename.c_str());
+    if (tinyxml2::XML_NO_ERROR != doc.LoadFile(filename.c_str())) {
+        std::cerr << "Cannot open " << filename << std::endl;
+    }
     tinyxml2::XMLElement *root = doc.FirstChildElement("edges");
     
     double unit = atof(root->FirstChildElement("pixel_size")->GetText());
     double f = atof(root->FirstChildElement("focal_length")->GetText()) / unit;
     IncidentVector::setF(f);
+    IncidentVector::setF0((int)f);
     
     cv::Size2i img_size;
     cv::Point2d center;
@@ -110,6 +113,8 @@ void Calibration::loadData(std::string filename) {
         edges.push_back(tmp);
         pair = pair->NextSiblingElement("pair");
     }
+    
+    doc.Clear();
 }
 
 void Calibration::save(std::string filename)
@@ -133,20 +138,21 @@ void Calibration::calibrate(bool divide)
 {
     const auto start_time = std::chrono::system_clock::now();
     
-    for (std::vector<Pair>::iterator pair = edges.begin(); pair != edges.end(); ++pair) {
-        pair->calcM();
-        pair->calcNormal();
-        pair->calcLine();
+    for (auto &pair : edges) {
+        pair.calcM();
+        pair.calcNormal();
+        pair.calcLine();
     }
     
-    gamma[0] = J1();
-    gamma[1] = J2();
-    gamma[2] = J3();
-    std::cout << "J1  \t" << gamma[0] << "\nJ2  \t" << gamma[1] << "\nJ3  \t" << gamma[2] << std::endl;
+    double j1 = J1(), j2 = J2(), j3 = J3();
+    double gamma[3] = { j1, j2, j3 };
+
     if (divide) {
-        J0 = gamma[0] / gamma[0] + gamma[1] / gamma[1] + gamma[2] / gamma[2];
+        J0 = j1 / gamma[0] + j2 / gamma[1] + j3 / gamma[2];
+        std::cout << "J1  \t" << j1/gamma[0] << "\nJ2  \t" << j2/gamma[1] << "\nJ3  \t" << j3/gamma[2] << std::endl;
     } else {
-        J0 = gamma[0] + gamma[1] + gamma[2];
+        J0 = j1 + j2 + j3;
+        std::cout << "J1  \t" << j1 << "\nJ2  \t" << j2 << "\nJ3  \t" << j3 << std::endl;
     }
     std::cout << "======================================" << std::endl;
     
@@ -158,9 +164,11 @@ void Calibration::calibrate(bool divide)
         
         //    ( 2 ) 式(3) によって入射角θκα を計算し，式(6) によって入射光ベクトルmκα を計算し，
         //    式(7), (10), (13) によって∂mκα/∂c を計算する(c = u0, v0, f, a1, a2, ...)．
-        for (std::vector<Pair>::iterator pair = edges.begin(); pair != edges.end(); ++pair) {
-            pair->calcM();
-            pair->calcDerivatives();
+        for (auto &pair : edges) {
+            pair.calcM();
+            pair.calcNormal();
+            pair.calcLine();
+            pair.calcDerivatives();
         }
         
         //    ( 3 ) それらを用いてJ のパラメータに関する1 階微分Jc，2 階微分Jcc0 を計算する
@@ -172,14 +180,16 @@ void Calibration::calibrate(bool divide)
                 // (1+C) isn't calculated here, look at the next while loop
                 if (divide) {
                     left.at<double>(i, j) = J1cc(i, j) / gamma[0] + J2cc(i, j) / gamma[1] + J3cc(i, j) / gamma[2];
-                    right.at<double>(i) = J1c(i) / gamma[0] + J2c(i) / gamma[1] + J3c(i) / gamma[2];
                 } else {
                     left.at<double>(i, j) = J1cc(i, j) + J2cc(i, j) + J3cc(i, j);
-                    right.at<double>(i) = J1c(i) + J2c(i) + J3c(i);
                 }
             }
+            if (divide) {
+                right.at<double>(i) = J1c(i) / gamma[0] + J2c(i) / gamma[1] + J3c(i) / gamma[2];
+            } else {
+                right.at<double>(i) = J1c(i) + J2c(i) + J3c(i);
+            }
         }
-        std::cout << left << '\n' << right << std::endl;
         
         
         cv::Mat delta;
@@ -192,9 +202,6 @@ void Calibration::calibrate(bool divide)
             }
             //    ( 4 ) 次の連立1次方程式を解いてΔu0, Δv0, Δf, Δa1, ... を計算する．
             cv::solve(left.mul(cmat), -right, delta);
-//            cv::solve(left.mul(cmat), right, delta);
-//            std::cout << left << std::endl;
-//            std::cout << right << std::endl;
             std::cout << "------------------------ Iteration "<< iterations << " -------------------------" << std::endl;
             std::cout << "Delta: " << delta << std::endl;
             
@@ -211,20 +218,29 @@ void Calibration::calibrate(bool divide)
             IncidentVector::setF(f_);
             IncidentVector::setA(a_);
             IncidentVector::setCenter(center_);
-            for (std::vector<Pair>::iterator pair = edges.begin(); pair != edges.end(); ++pair) {
-                pair->calcM();
-                pair->calcNormal();
-                pair->calcLine();
+            for (auto &pair : edges) {
+                pair.calcM();
+                pair.calcNormal();
+                pair.calcLine();
             }
             
-            double j1 = J1(), j2 = J2(), j3 = J3();
+            j1 = J1();
+            j2 = J2();
+            j3 = J3();
             if (divide) {
                 J_ =  j1 / gamma[0] + j2 / gamma[1] + j3 / gamma[2];
+                std::cout << "C: " << C << "\tJ0: " << J0 << "\tJ_: " << J_;
+                std::cout.precision(10);
+                std::cout.width(10);
+                std::cout << "\tJ1_: " << j1/gamma[0] << "\tJ2_: " << j2/gamma[1] << "\tJ3_: " << j3/gamma[2] << std::endl;
             } else {
                 J_ = j1 + j2 + j3;
+                std::cout << "C: " << C << "\tJ0: " << J0 << "\tJ_: " << J_;
+                std::cout.precision(10);
+                std::cout.width(10);
+                std::cout << "\tJ1_: " << j1 << "\tJ2_: " << j2 << "\tJ3_: " << j3 << std::endl;
             }
-            std::cout << "C: " << C << "\tJ0: " << J0 << "\tJ_: " << J_;
-            std::cout << "\tJ1_: " << j1 << "\tJ2_: " << j2 << "\tJ3_: " << j3 << std::endl;
+            
             
             //    ( 6 ) ˜ J < J0 なら次へ進む．そうでなければC Ã 10C としてステップ(4) に戻る．
             if ( J_  <= J0) {
@@ -265,17 +281,19 @@ void Calibration::calibrate(bool divide)
     }
     
     const auto duration = std::chrono::system_clock::now() - start_time;
-    std::cout << "Calibration has been finished in " << std::chrono::duration_cast<std::chrono::seconds>(duration).count() << " seconds" << std::endl;
+    int minutes = (int)std::chrono::duration_cast<std::chrono::minutes>(duration).count();
+    int seconds = (int)std::chrono::duration_cast<std::chrono::seconds>(duration).count() - minutes*60;
+    std::cout << "Calibration has been finished in " << minutes << " minutes " << seconds << " seconds" << std::endl;
 }
 
 double Calibration::J1()
 {
     double j1 = 0;
     
-    for (std::vector<Pair>::iterator pair = edges.begin(); pair != edges.end(); ++pair) {
+    for (auto &pair : edges) {
         for (int i = 0; i < 2; ++i) {
-            for (std::vector<cv::Mat>::iterator nval = pair->normalValue[i].begin(); nval != pair->normalValue[i].end(); ++nval) {
-                j1 += nval->at<double>(2);
+            for (auto &nval : pair.normalValue[i]) {
+                j1 += nval.at<double>(2);
             }
         }
     }
@@ -287,11 +305,11 @@ double Calibration::J1c(int c)
 {
     double j1c = 0;
     
-    for (std::vector<Pair>::iterator pair = edges.begin(); pair != edges.end(); ++pair) {
+    for (auto &pair : edges) {
         for (int i = 0; i < 2; ++i) {
-            std::vector<cv::Mat>::iterator nvec = pair->normalVector[i].begin();
-            std::vector<Pair::C>::iterator mc = pair->Mc[i].begin();
-            for (; mc != pair->Mc[i].end() && nvec != pair->normalValue[i].end(); ++mc, ++nvec) { // For each line
+            std::vector<cv::Mat>::iterator nvec = pair.normalVector[i].begin();
+            std::vector<Pair::C>::iterator mc = pair.Mc[i].begin();
+            for (; mc != pair.Mc[i].end() && nvec != pair.normalValue[i].end(); ++mc, ++nvec) { // For each line
                 cv::Mat nk = nvec->row(2).t();
                 j1c += nk.dot(mc->at(c) * nk);
             }
@@ -304,14 +322,14 @@ double Calibration::J1cc(int c1, int c2)
 {
     double j1cc = 0;
     
-    for (std::vector<Pair>::iterator pair = edges.begin(); pair != edges.end(); ++pair) {
+    for (auto &pair : edges) {
         for (int i = 0; i < 2; ++i) {
-            std::vector<cv::Mat>::iterator nvec = pair->normalVector[i].begin();
-            std::vector<cv::Mat>::iterator nval = pair->normalValue[i].begin();
-            std::vector<Pair::C>::iterator mc = pair->Mc[i].begin();
-            std::vector<Pair::Cc>::iterator mcc = pair->Mcc[i].begin();
+            std::vector<cv::Mat>::iterator nvec = pair.normalVector[i].begin();
+            std::vector<cv::Mat>::iterator nval = pair.normalValue[i].begin();
+            std::vector<Pair::C>::iterator mc = pair.Mc[i].begin();
+            std::vector<Pair::Cc>::iterator mcc = pair.Mcc[i].begin();
             
-            for (;mc != pair->Mc[i].end() && mcc != pair->Mcc[i].end() && nvec != pair->normalVector[i].end() && nval != pair->normalValue[i].end(); ++mc, ++mcc, ++nvec, ++nval) { // For each line
+            for (;mc != pair.Mc[i].end() && mcc != pair.Mcc[i].end() && nvec != pair.normalVector[i].end() && nval != pair.normalValue[i].end(); ++mc, ++mcc, ++nvec, ++nval) { // For each line
                 
                 cv::Mat nk = nvec->row(2).t();
                 cv::Mat nki[2] = {nvec->row(0).t(), nvec->row(1).t()};
@@ -326,6 +344,7 @@ double Calibration::J1cc(int c1, int c2)
     }
     
     j1cc *= 2;
+
     return j1cc;
 }
 
@@ -333,10 +352,9 @@ double Calibration::J2()
 {
     double j2 = 0;
     
-    
-    for (std::vector<Pair>::iterator pair = edges.begin(); pair != edges.end(); ++pair) {
+    for (auto &pair : edges) {
         for (int i = 0; i < 2; ++i) {
-            j2 += pair->lineValue[i].at<double>(2);
+            j2 += pair.lineValue[i].at<double>(2);
         }
     }
     
@@ -347,10 +365,10 @@ double Calibration::J2c(int c)
 {
     double j2c = 0;
     
-    for (std::vector<Pair>::iterator pair = edges.begin(); pair != edges.end(); ++pair) {
+    for (auto &pair : edges) {
         for (int i = 0; i < 2; ++i) {
-            cv::Mat lg = pair->lineVector[i].row(2).t();
-            j2c += lg.dot(pair->Nc[i].at(c) * lg);
+            cv::Mat lg = pair.lineVector[i].row(2).t();
+            j2c += lg.dot(pair.Nc[i].at(c) * lg);
         }
     }
     
@@ -361,19 +379,21 @@ double Calibration::J2cc(int c1, int c2)
 {
     double j2cc = 0;
     
-    for (std::vector<Pair>::iterator pair = edges.begin(); pair != edges.end(); ++pair) {
+    for (auto &pair : edges) {
         for (int i = 0; i < 2; ++i) {
-            cv::Mat lg = pair->lineVector[i].row(2).t();
-            j2cc += lg.dot(pair->Ncc[i].at(c1, c2) * lg);
+            cv::Mat lg = pair.lineVector[i].row(2).t();
+            j2cc += lg.dot(pair.Ncc[i].at(c1, c2) * lg);
             
-            cv::Mat lgi[2] = {pair->lineVector[i].row(0).t(), pair->lineVector[i].row(1).t()};
+            cv::Mat lgi[2] = {pair.lineVector[i].row(0).t(), pair.lineVector[i].row(1).t()};
             for (int j = 0; j < 2; ++j) {
-                j2cc -= (lgi[j].dot(pair->Nc[i].at(c1) * lg) * lgi[j].dot(pair->Nc[i].at(c2) * lg)) / (pair->lineValue[i].at<double>(j) - pair->lineValue[i].at<double>(2));
+                j2cc -= (lgi[j].dot(pair.Nc[i].at(c1) * lg) * lgi[j].dot(pair.Nc[i].at(c2) * lg)) / (pair.lineValue[i].at<double>(j) - pair.lineValue[i].at<double>(2));
+
             }
         }
     }
     
     j2cc *= 2;
+    
     return j2cc;
 }
 
@@ -381,9 +401,8 @@ double Calibration::J2cc(int c1, int c2)
 double Calibration::J3()
 {
     double j3 = 0;
-    
-    for (std::vector<Pair>::iterator pair = edges.begin(); pair != edges.end(); ++pair) {
-        j3 += pow((pair->lineVector[0].row(2)).dot(pair->lineVector[1].row(2)), 2);
+    for (auto &pair : edges) {
+        j3 += pow((pair.lineVector[0].row(2)).dot(pair.lineVector[1].row(2)), 2);
     }
     
     return j3;
@@ -393,10 +412,10 @@ double Calibration::J3c(int c)
 {
     double j3c = 0;
     
-    for (std::vector<Pair>::iterator pair = edges.begin(); pair != edges.end(); ++pair) {
-        cv::Mat lg1 = pair->lineVector[0].row(2).t();
-        cv::Mat lg2 = pair->lineVector[1].row(2).t();
-        j3c += (lg1.dot(lg2)) * ((pair->lc[0].at(c)).dot(lg2))+(lg1).dot(pair->lc[1].at(c));
+    for (auto &pair : edges) {
+        cv::Mat lg1 = pair.lineVector[0].row(2).t();
+        cv::Mat lg2 = pair.lineVector[1].row(2).t();
+        j3c += (lg1.dot(lg2)) * ((pair.lc[0].at(c)).dot(lg2))+(lg1).dot(pair.lc[1].at(c));
     }
     
     j3c *= 2;
@@ -407,17 +426,19 @@ double Calibration::J3cc(int c1, int c2)
 {
     double j3cc = 0;
     
-    for (std::vector<Pair>::iterator pair = edges.begin(); pair != edges.end(); ++pair) {
+    for (auto &pair : edges) {
         
-        cv::Mat lg1 = pair->lineVector[0].row(2).t();
-        cv::Mat lg2 = pair->lineVector[1].row(2).t();
+        cv::Mat lg1 = pair.lineVector[0].row(2).t();
+        cv::Mat lg2 = pair.lineVector[1].row(2).t();
         
-        double tmp1 = (pair->lc[0].at(c1)).dot(lg2) + (lg1.dot(pair->lc[1].at(c1)));
-        double tmp2 = (pair->lc[0].at(c2)).dot(lg2) + (lg1.dot(pair->lc[1].at(c2)));
+        double tmp1 = (pair.lc[0].at(c1)).dot(lg2) + (lg1.dot(pair.lc[1].at(c1)));
+        double tmp2 = (pair.lc[0].at(c2)).dot(lg2) + (lg1.dot(pair.lc[1].at(c2)));
         
         j3cc += tmp1 * tmp2;
+
     }
     
     j3cc *= 2;
+
     return j3cc;
 }

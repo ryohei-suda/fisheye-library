@@ -49,4 +49,5 @@ void CameraMotion::calcOpticalFlow(cv::Mat img1, cv::Mat img2)
         cv::imshow("optical flow", img2);
         if(cv::waitKey() == 'q') { break; }
     }
+    
 }

@@ -21,35 +21,48 @@ int main(int argc, const char * argv[])
 {
     Calibration calib;
     
-    std::string filename; // "/Users/ryohei/Dropbox/univ/lab/Images/data.dat"
+//    std::string filename(argv[1]);
+    
+    std::string filename;
     std::cout << "Type filename > ";
     std::cin >> filename;
     calib.loadData(filename);
-    IncidentVector::setF0(150);
-    std::cout << "Type correction degree > ";
+//    int a_size = atoi(argv[5]);
     int a_size;
+    std::cout << "Type correction degree > ";
     std::cin >> a_size;
     IncidentVector::initA(a_size);
 //    std::vector<double> a;
-//    a.push_back(0.00629485063263903); a.push_back(0.0000933288514046128); a.push_back(-0.000037316107836422); a.push_back(0.0000025494474188023); a.push_back(-5.12895465870539E-08);
+//    a.push_back(0.0001); a.push_back(0.00002); a.push_back(0.000003); a.push_back(0.0000004); a.push_back(0.00000005);
 //    a_size = 5;
 //    IncidentVector::setA(a);
-//    IncidentVector::setF(421.396310797531);
-//    IncidentVector::setCenter(cv::Point2d(700,500));
+//    int x = atoi(argv[2]), y = atoi(argv[3]), f = atoi(argv[4]);
+//    double x = 953., y = 600., f = 401.;
+//    IncidentVector::setF(f);
+//    IncidentVector::setCenter(cv::Point2d(x,y));
+//    IncidentVector::setF0((int)f);
     
+    std::cout << "Projection Model:\t" << IncidentVector::getProjectionName() << std::endl;
     std::cout << "Center:\t" << IncidentVector::getCenter() << std::endl;
     std::cout << "     f:\t" << IncidentVector::getF() << std::endl;
-    for (int i = 0; i < a_size; ++i) {
+    for (int i = 0; i < IncidentVector::nparam-3; ++i) {
         std::cout << "    a" << i << ":\t" << IncidentVector::getA().at(i) << std::endl;
     }
     
     std::cout << "Orthogonal pairs: " << calib.edges.size() << std::endl;
-    double lines = 0;
-    for (std::vector<Pair>::iterator it = calib.edges.begin(); it != calib.edges.end(); ++it) {
-        lines += it->edge[0].size();
-        lines += it->edge[1].size();
+    long lines = 0;
+    long points = 0;
+    for (auto &pair : calib.edges) {
+        lines += pair.edge[0].size() + pair.edge[1].size();
+        for (auto &line : pair.edge[0]) {
+            points += line.size();
+        }
+        for (auto &line : pair.edge[1]) {
+            points += line.size();
+        }
     }
     std::cout << "Lines: " << lines << std::endl;
+    std::cout << "Points: " << points << std::endl;
 
     
     // Show an image of all edges
@@ -73,9 +86,18 @@ int main(int argc, const char * argv[])
 //    }
 //    cv::imwrite("edges.png", img);
     
-//    calib.calibrate(false);
-    calib.calibrate(true);
-    calib.save("parameters.xml");
+//    if (std::string(argv[7]) == std::string("divide")) {
+//        calib.calibrate(true);
+//    } else {
+//        calib.calibrate(false);
+//    }
+    calib.calibrate(false);
+    
+    std::string outname;
+    std::cout << "Type output filename > ";
+    std::cin >> outname;
+//    std::string outname(argv[6]);
+    calib.save(outname);
 
     
     std::cout << "END" << std::endl;

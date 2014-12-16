@@ -20,17 +20,24 @@ class Pair
 public:
     class Cc { // To store all second derivatives of M or N for a pair
     public:
-        std::vector<std::vector<cv::Mat>> ms;
+        std::vector<std::vector<cv::Mat> > ms;
         Cc() {
+            ms.clear();
             for (int i = 0; i < IncidentVector::nparam; ++i) {
-                std::vector<cv::Mat> tmp;
-                for (int j = 0; j < IncidentVector::nparam; ++j) {
-                    tmp.push_back(cv::Mat::zeros(3, 3, CV_64F));
-                }
+                std::vector<cv::Mat> tmp(IncidentVector::nparam);
                 ms.push_back(tmp);
             }
+            init();
         };
-        cv::Mat at(int c1, int c2) {
+    
+        inline void init() {
+            for (int i = 0; i < IncidentVector::nparam; ++i) {
+                for (int j = 0; j < IncidentVector::nparam; ++j) {
+                    ms[i][j] = cv::Mat::zeros(3, 3, CV_64F);
+                }
+            }
+        }
+        inline cv::Mat at(int c1, int c2) {
             return ms[c1][c2];
         }
     };
@@ -39,13 +46,20 @@ public:
     public:
         std::vector<cv::Mat> ms;
         C() {
-            for (int i = 0; i < IncidentVector::nparam; ++i) {
-                ms.push_back(cv::Mat::zeros(3, 3, CV_64F));
-            }
+            ms.resize(IncidentVector::nparam);
+            init();
         };
-        cv::Mat at(int c) {
+        
+        inline void init() {
+            for (int i = 0; i < IncidentVector::nparam; ++i) {
+                ms[i] = cv::Mat::zeros(3, 3, CV_64F);
+            }
+        }
+        
+        inline cv::Mat at(int c) {
             return ms[c];
         }
+        
     };
     
     std::vector<std::vector<IncidentVector *> > edge[2];
@@ -57,7 +71,7 @@ public:
     std::vector<Cc> Mcc[2];
     C Nc[2];
     Cc Ncc[2];
-    std::vector<cv::Mat> lc[2];
+    C lc[2];
     
     void calcM();
     
@@ -66,7 +80,7 @@ public:
     void calcLine();
     
     // Derivatives
-    void calcMd(); // For points
+    void calcMd(); // Calculate all derivatives of points
     void calcMc(); // For M
     void calcMcc();
     void calcNc();
