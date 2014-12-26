@@ -21,7 +21,7 @@ int main(int argc, const char * argv[])
         reproj.loadPrameters(fname);
         reproj.theta2radius();
         fname.replace(fname.size()-3, fname.size(), "dat");
-        reproj.saveRadiusTheta(fname);
+        reproj.saveTheta2Radius(fname);
     }
     
     Reprojection reproj;

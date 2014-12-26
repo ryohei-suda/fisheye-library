@@ -46,40 +46,53 @@ void Reprojection::theta2radius()
         max_r += pow(center.y, 2);
     }
     max_r = sqrt(max_r);
+    max_r = 2000;
     int theta_size = round(max_r) * precision + 10; // If PRECISION = 10, r = {0, 0.1, 0.2, 0.3, ...}
     
-    std::vector<double> theta(theta_size);
+    r2t.resize(theta_size);
     for (int i = 0; i < theta_size; ++i) {
         double r = (double)i / precision;
-        theta[i] = r/f0;
+        r2t[i] = r/f0;
         for (int j = 0; j != a.size(); ++j) {
-            theta[i] += a[j] * pow(r/f0, j*2+3);
+            r2t[i] += a[j] * pow(r/f0, j*2+3);
         }
-        theta[i] *= f0/f;
+        r2t[i] *= f0/f;
     }
     
-
     int r_size = max_r * precision + 10;
-    r.resize(r_size);
+    r_size = 2000 * precision;
+    t2r.resize(r_size);
     int j = 1; // j/PRECISION: radius
-    rad_step = theta[theta_size-1] / r_size; // 0 ~ theta[end] radian
+    rad_step = r2t[theta_size-1] / r_size; // 0 ~ theta[end] radian
+    rad_step = 2.35 / r_size;
     for (int i = 0; i < r_size; ++i) {
         double rad = rad_step * i;
         for (; j < theta_size; ++j) {
-            if (theta[j] > rad) {
-                r[i] = ((i*rad_step - theta[j-1]) / (theta[j]-theta[j-1]) + j-1) / precision; // See my note on 2014/6/6
+            if (r2t[j] > rad) {
+                t2r[i] = ((i*rad_step - r2t[j-1]) / (r2t[j]-r2t[j-1]) + j-1) / precision; // See my note on 2014/6/6
                 break;
             }
         }
     }
 }
 
-void Reprojection::saveRadiusTheta(std::string filename)
+void Reprojection::saveTheta2Radius(std::string filename)
 {
     std::ofstream ofs(filename);
     
-    for (int i = 0; i < r.size(); ++i) {
-        ofs << r[i] << ' ' << rad_step * i << ' ' << rad_step * i * 180 / M_PI << std::endl;
+    for (int i = 0; i < t2r.size(); ++i) {
+        ofs << t2r[i] << ' ' << rad_step * i << ' ' << rad_step * i * 180 / M_PI << std::endl;
+    }
+    
+    ofs.close();
+}
+
+void Reprojection::saveRadius2Theta(std::string filename)
+{
+    std::ofstream ofs(filename);
+    
+    for (int i = 0; i < r2t.size(); ++i) {
+        ofs << (double)i/precision << ' ' << r2t[i] << ' ' << r2t[i] * 180 / M_PI << std::endl;
     }
     
     ofs.close();
@@ -112,7 +125,12 @@ void Reprojection::calcMaps(double theta_x, double theta_y, double f_, cv::Mat& 
             double y = real.at<double>(1,0);
             double z = real.at<double>(2,0);
             double theta = atan2(sqrt(1-pow(z,2)), z);
-            cv::Point2d final = center + r[(int)(theta/rad_step)] / sqrt(1-pow(z,2)) * cv::Point2d(x,y);
+            if (t2r.size() <= (int)(theta/rad_step)) {
+                mapx.at<float>(y_,x_) = 0;
+                mapy.at<float>(y_,x_) = 0;
+                continue;
+            }
+            cv::Point2d final = center + t2r[(int)(theta/rad_step)] / sqrt(1-pow(z,2)) * cv::Point2d(x,y);
             //            cv::Point2d final = center + f * theta / sqrt(1-pow(z,2))  * cv::Point2d(x,y); // Perspective projection
             //            cv::Point2d final = center + 2*f*tan(theta/2) / sqrt(1-pow(z,2))  * cv::Point2d(x,y); // Stereo graphic projection
             

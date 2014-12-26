@@ -70,19 +70,19 @@ int main(int argc, const char * argv[])
 //    for (int i=0; i < calib.edges.size(); ++i) {
 //        for (int j=0; j < calib.edges[i].edge[0].size(); ++j) {
 //            for (int k=0; k < calib.edges[i].edge[0][j].size(); ++k) {
-//                img.at<uchar>(calib.edges[i].edge[0][j][k].point.y, calib.edges[i].edge[0][j][k].point.x) = 255;
+//                img.at<uchar>(calib.edges[i].edge[0][j][k]->point.y, calib.edges[i].edge[0][j][k]->point.x) = 255;
 //            }
 //        }
-//        cv::imshow("edges", img);
-//        cv::waitKey();
+////        cv::imshow("edges", img);
+////        cv::waitKey();
 //        for (int j=0; j < calib.edges[i].edge[1].size(); ++j) {
 //            for (int k=0; k < calib.edges[i].edge[1][j].size(); ++k) {
-//                img.at<uchar>(calib.edges[i].edge[1][j][k].point.y, calib.edges[i].edge[1][j][k].point.x) = 255;
+//                img.at<uchar>(calib.edges[i].edge[1][j][k]->point.y, calib.edges[i].edge[1][j][k]->point.x) = 255;
 //            }
 //        }
-//        cv::imshow("edges", img);
-//        cv::waitKey();
-//        img = cv::Mat::zeros(IncidentVector::getImgSize().height, IncidentVector::getImgSize().width, CV_8UC1);
+////        cv::imshow("edges", img);
+////        cv::waitKey();
+////        img = cv::Mat::zeros(IncidentVector::getImgSize().height, IncidentVector::getImgSize().width, CV_8UC1);
 //    }
 //    cv::imwrite("edges.png", img);
     
@@ -98,6 +98,9 @@ int main(int argc, const char * argv[])
     std::cin >> outname;
 //    std::string outname(argv[6]);
     calib.save(outname);
+    
+    calib.calibrate(true);
+    calib.save(std::string("d_")+outname);
 
     
     std::cout << "END" << std::endl;

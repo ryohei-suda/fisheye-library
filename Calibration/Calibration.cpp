@@ -315,6 +315,7 @@ double Calibration::J1c(int c)
             }
         }
     }
+    
     return j1c;
 }
 
@@ -338,11 +339,9 @@ double Calibration::J1cc(int c1, int c2)
                 for (int j = 0; j < 2; ++j) {
                     j1cc -= (nki[j].dot(mc->at(c1) * nk)) * (nki[j].dot(mc->at(c2) * nk)) / (nval->at<double>(j) - nval->at<double>(2));
                 }
-                
             }
         }
     }
-    
     j1cc *= 2;
 
     return j1cc;
@@ -387,11 +386,9 @@ double Calibration::J2cc(int c1, int c2)
             cv::Mat lgi[2] = {pair.lineVector[i].row(0).t(), pair.lineVector[i].row(1).t()};
             for (int j = 0; j < 2; ++j) {
                 j2cc -= (lgi[j].dot(pair.Nc[i].at(c1) * lg) * lgi[j].dot(pair.Nc[i].at(c2) * lg)) / (pair.lineValue[i].at<double>(j) - pair.lineValue[i].at<double>(2));
-
             }
         }
     }
-    
     j2cc *= 2;
     
     return j2cc;
@@ -401,6 +398,7 @@ double Calibration::J2cc(int c1, int c2)
 double Calibration::J3()
 {
     double j3 = 0;
+    
     for (auto &pair : edges) {
         j3 += pow((pair.lineVector[0].row(2)).dot(pair.lineVector[1].row(2)), 2);
     }
@@ -419,6 +417,7 @@ double Calibration::J3c(int c)
     }
     
     j3c *= 2;
+
     return j3c;
 }
 
@@ -435,7 +434,6 @@ double Calibration::J3cc(int c1, int c2)
         double tmp2 = (pair.lc[0].at(c2)).dot(lg2) + (lg1.dot(pair.lc[1].at(c2)));
         
         j3cc += tmp1 * tmp2;
-
     }
     
     j3cc *= 2;
