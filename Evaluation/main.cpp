@@ -7,9 +7,17 @@
 //
 
 #include <iostream>
+#include "Evaluation.h"
 
 int main(int argc, const char * argv[]) {
-    // insert code here...
-    std::cout << "Hello, World!\n";
+    Evaluation e;
+    
+    std::string fname;
+    std::cout << "Type data file name > ";
+    std::cin >> fname;
+    e.loadData(fname);
+    
+    e.projectAllPoints();
+    
     return 0;
 }
