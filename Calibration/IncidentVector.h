@@ -18,7 +18,7 @@
 
 class IncidentVector
 {
-protected:
+private:
     static double f; // Focal length (pixel unit)
     static double f0; // Scale constant
     static std::vector<double> a; // Distortion parameters
@@ -69,6 +69,9 @@ public:
     static void setProjection(std::string projection);
     static int getProjection() { return projection; }
     static std::string getProjectionName() { return projection_name[projection]; }
+    double getTheta() {
+        return theta;
+    }
     
     void calcDerivatives();
     void calcM();
