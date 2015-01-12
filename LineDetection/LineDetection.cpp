@@ -146,7 +146,7 @@ void LineDetection::onMouse(int event, int x, int y, int flag, void* data)
 }
 
 // Display an image with selecting function
-void LineDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2i>>& edges, std::string name)
+void LineDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2i> >& edges, std::string name)
 {
     cv::namedWindow(name, CV_WINDOW_NORMAL);
     
@@ -169,7 +169,7 @@ void LineDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2i
         // Draw lines
         show = cv::Mat::zeros(size.height, size.width, CV_8UC3);
         int i = 0;
-        for (std::vector<std::vector<cv::Point2i>>::iterator line = edges.begin(); line != edges.end(); ++line, ++i) {
+        for (std::vector<std::vector<cv::Point2i> >::iterator line = edges.begin(); line != edges.end(); ++line, ++i) {
             for (std::vector<cv::Point2i>::iterator point = line->begin(); point != line->end(); ++point) {
                 show.at<cv::Vec3b>(point->y, point->x) = color[i%30];
             }
@@ -181,7 +181,7 @@ void LineDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2i
             show(selection.area) = cv::max(show(selection.area), over);
         } else if (selection.status == 2) {
 //            image(selection.area) = cv::Mat::zeros(selection.area.height, selection.area.width, CV_8UC1);
-            for (std::vector<std::vector<cv::Point2i>>::iterator line = edges.begin(); line != edges.end(); ) {
+            for (std::vector<std::vector<cv::Point2i> >::iterator line = edges.begin(); line != edges.end(); ) {
                 bool deleted = false;
                 for (std::vector<cv::Point2i>::iterator point = line->begin(); point != line->end(); ) {
                     if (point->x >= selection.area.x && point->x <= selection.area.x+selection.area.width && point->y >= selection.area.y && point->y <= selection.area.y+selection.area.height) {
@@ -192,7 +192,7 @@ void LineDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2i
                     }
                 }
                 if (deleted) {
-                    std::vector<std::vector<cv::Point2i>> clustered = clusteringEdges(*line);
+                    std::vector<std::vector<cv::Point2i> > clustered = clusteringEdges(*line);
                     for (std::vector<std::vector<cv::Point2i>>::iterator it = clustered.begin(); it != clustered.end();) {
                         if (it->size() < 20) { // Delete edges which have under 20 points
                             it = clustered.erase(it);
@@ -219,7 +219,7 @@ void LineDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2i
             selection.status = 0;
             
         } else if (selection.status == 3) { // Remove one point
-            for (std::vector<std::vector<cv::Point2i>>::iterator line = edges.begin(); line != edges.end(); ) {
+            for (std::vector<std::vector<cv::Point2i> >::iterator line = edges.begin(); line != edges.end(); ) {
                 bool deleted = false;
                 for (std::vector<cv::Point2i>::iterator point = line->begin(); point != line->end(); ) {
                     if (point->x == selection.area.x && point->y == selection.area.y) {
@@ -231,8 +231,8 @@ void LineDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2i
                     }
                 }
                 if (deleted) {
-                    std::vector<std::vector<cv::Point2i>> clustered = clusteringEdges(*line);
-                    for (std::vector<std::vector<cv::Point2i>>::iterator it = clustered.begin(); it != clustered.end();) {
+                    std::vector<std::vector<cv::Point2i> > clustered = clusteringEdges(*line);
+                    for (std::vector<std::vector<cv::Point2i> >::iterator it = clustered.begin(); it != clustered.end();) {
                         if (it->size() < 20) { // Delete edges which have under 20 points
                             it = clustered.erase(it);
                         } else {
@@ -288,9 +288,9 @@ cv::Mat LineDetection::detectEdges(cv::Mat &image, cv::Mat &mask)
 /*
  * Extract points of edges from an edge image
  */
-std::vector<std::vector<cv::Point2i>> LineDetection::extractEdges(cv::Mat& image)
+std::vector<std::vector<cv::Point2i> > LineDetection::extractEdges(cv::Mat& image)
 {
-    std::vector<std::vector<cv::Point2i>> edges;
+    std::vector<std::vector<cv::Point2i> > edges;
 //    std::vector<cv::Point2i> points;
 //    
 //    for (int y = 0; y < image.rows; y++) {
@@ -368,9 +368,9 @@ std::vector<std::vector<cv::Point2i>> LineDetection::extractEdges(cv::Mat& image
     return edges;
 }
 
-std::vector<std::vector<cv::Point2i>> LineDetection::clusteringEdges(std::vector<cv::Point2i> points)
+std::vector<std::vector<cv::Point2i> > LineDetection::clusteringEdges(std::vector<cv::Point2i> points)
 {
-    std::vector<std::vector<cv::Point2i>> edges;
+    std::vector<std::vector<cv::Point2i> > edges;
     
     while (!points.empty()) {
         std::vector<cv::Point2i> new_edge;
@@ -406,6 +406,7 @@ void LineDetection::processAllImages()
     for (; pair != image_names.end(); ++pair) {
         std::vector<std::vector<cv::Point2i> > edges[2];
         cv::Mat img[4];
+        cv::Mat tmp;
         switch (pair->type) {
             case Four:
                 for (int i = 0; i < 4; ++i) {
@@ -415,7 +416,8 @@ void LineDetection::processAllImages()
                         std::cerr << "Cannot open!" << pair->filenames[i] << std::endl;
                         exit(-1);
                     }
-                }
+                    img[i].convertTo(tmp, CV_64F);
+                    cv::resize(tmp, img[i], cv::Size(), unit, unit, cv::INTER_CUBIC);                }
                 edges[0] = detectValley(img[0], img[1]);
                 display(cv::Size2i(img[0].cols, img[0].rows), edges[0], "edges");
                 edges[1] = detectValley(img[2], img[3]);
@@ -430,6 +432,7 @@ void LineDetection::processAllImages()
                         std::cerr << "Cannot open!" << pair->filenames[i] << std::endl;
                         exit(-1);
                     }
+                    cv::resize(img[i], img[i], cv::Size(), unit, unit, cv::INTER_CUBIC);
                     cv::Canny(img[i], img[i], 50, 200);
                     edges[i] = extractEdges(img[i]);
                     display(cv::Size2i(img[i].cols, img[i].rows), edges[i], pair->filenames[i]);
@@ -444,6 +447,7 @@ void LineDetection::processAllImages()
                         std::cerr << "Cannot open!" << pair->filenames[i] << std::endl;
                         exit(-1);
                     }
+                    cv::resize(img[i], img[i], cv::Size(), unit, unit, cv::INTER_CUBIC);
                 }
                 cv::Mat mask = makeMask(img[2], img[3]);
                 for (int i = 0; i < 2; ++i) {
@@ -454,7 +458,7 @@ void LineDetection::processAllImages()
                 break;
         }
         
-        saveTwoEdges(edges[0], edges[1]);
+        saveTwoSetOfLines(edges[0], edges[1]);
     }
 }
 
@@ -482,37 +486,34 @@ void LineDetection::saveParameters()
 }
 
 // Save a pair of edges
-void LineDetection::saveTwoEdges(std::vector<std::vector<cv::Point2i>>& first, std::vector<std::vector<cv::Point2i>>& second)
+void LineDetection::saveTwoSetOfLines(std::vector<std::vector<cv::Point2i> >& first, std::vector<std::vector<cv::Point2i> >& second)
 {
     tinyxml2::XMLElement *pair = output.NewElement("pair");
     output.RootElement()->InsertEndChild(pair);
-    tinyxml2::XMLElement *edge1 = output.NewElement("edge1");
-    pair->InsertFirstChild(edge1);
-    tinyxml2::XMLElement *edge2 = output.NewElement("edge2");
-    pair->InsertEndChild(edge2);
+    tinyxml2::XMLElement *lines1 = output.NewElement("lines1");
+    pair->InsertFirstChild(lines1);
+    tinyxml2::XMLElement *lines2 = output.NewElement("lines2");
+    pair->InsertEndChild(lines2);
     
     char str[100];
     
-    std::vector<std::vector<cv::Point2i>>::iterator edge;
-    for (edge = first.begin(); edge != first.end(); ++edge) { // First edge
+    for (auto &lines : first) { // First lines
         tinyxml2::XMLElement *line = output.NewElement("line");
-        edge1->InsertEndChild(line);
-        std::vector<cv::Point2i>::iterator point;
-        for (point = edge->begin(); point != edge->end(); ++point) {
+        lines1->InsertEndChild(line);
+        for (auto &point : lines) {
             tinyxml2::XMLElement *p = output.NewElement("p");
-            sprintf(str, "%d %d", point->x, point->y);
+            sprintf(str, "%f %f", point.x/(float)unit, point.y/(float)unit);
             p->SetText(str);
             line->InsertEndChild(p);
         }
     }
-    
-    for (edge = second.begin(); edge != second.end(); ++edge) { // Second edge
+
+    for (auto &lines : second) { // Second lines
         tinyxml2::XMLElement *line = output.NewElement("line");
-        edge2->InsertEndChild(line);
-        std::vector<cv::Point2i>::iterator point;
-        for (point = edge->begin(); point != edge->end(); ++point) {
+        lines2->InsertEndChild(line);
+        for (auto &point : lines) {
             tinyxml2::XMLElement *p = output.NewElement("p");
-            sprintf(str, "%d %d", point->x, point->y);
+            sprintf(str, "%f %f", point.x/(float)unit, point.y/(float)unit);
             p->SetText(str);
             line->InsertEndChild(p);
         }
@@ -526,6 +527,17 @@ void LineDetection::writeXML(std::string filename)
 
 std::vector<std::vector<cv::Point2i> > LineDetection::detectValley(cv::Mat &img1, cv::Mat &img2)
 {
+    if (img1.type() != CV_64F) {
+        cv::Mat tmp;
+        img1.convertTo(tmp, CV_64F);
+        img1 = tmp;
+    }
+    if (img2.type() != CV_64F) {
+        cv::Mat tmp;
+        img2.convertTo(tmp, CV_64F);
+        img2 = tmp;
+    }
+    
     typedef enum {UpLeft, Up, UpRight, Left, Center, Right, DownLeft, Down, DownRight} Direction;
     int d2x[9] = {-1, 0, 1, -1, 0, 1, -1, 0, 1}; // Direction to which x coordination
     int d2y[9] = {-1, -1, -1, 0, 0, 0, 1, 1, 1}; // Direction to which y coordination
@@ -559,56 +571,60 @@ std::vector<std::vector<cv::Point2i> > LineDetection::detectValley(cv::Mat &img1
 //    cv::imshow("diff", diff);
 //    cv::waitKey();
     cv::GaussianBlur(diff, blur, cv::Size(5,5), 1);
+//    blur.convertTo(diff, CV_8U);
+//    cv::namedWindow("diff", CV_WINDOW_NORMAL);
+//    cv::imshow("diff", diff);
+//    cv::waitKey();
     
     cv::Mat valley = cv::Mat::zeros(blur.rows, blur.cols, CV_8UC1);
     for (int y = 3; y < blur.rows-3; ++y) {
         for (int x = 3; x < blur.cols-3; ++x) {
-            if (diff.at<uchar>(y,x) > 128) {
+            if (diff.at<double>(y,x) > 128) {
                 continue;
             }
-            if (threshold < blur.at<uchar>(y-3,x) &&
-                blur.at<uchar>(y-3,x) > blur.at<uchar>(y-2,x) &&
-                blur.at<uchar>(y-2,x) > blur.at<uchar>(y-1,x) &&
-                blur.at<uchar>(y-1,x) >= blur.at<uchar>(y,x) &&
-                blur.at<uchar>(y,x) <= blur.at<uchar>(y+1,x) &&
-                blur.at<uchar>(y+1,x) < blur.at<uchar>(y+2,x) &&
-                blur.at<uchar>(y+2,x) < blur.at<uchar>(y+3,x) &&
-                threshold < blur.at<uchar>(y+3,x)) {
+            if (threshold < blur.at<double>(y-3,x) &&
+                blur.at<double>(y-3,x) > blur.at<double>(y-2,x) &&
+                blur.at<double>(y-2,x) > blur.at<double>(y-1,x) &&
+                blur.at<double>(y-1,x) >= blur.at<double>(y,x) &&
+                blur.at<double>(y,x) <= blur.at<double>(y+1,x) &&
+                blur.at<double>(y+1,x) < blur.at<double>(y+2,x) &&
+                blur.at<double>(y+2,x) < blur.at<double>(y+3,x) &&
+                threshold < blur.at<double>(y+3,x)) {
                 valley.at<uchar>(y,x) = 255;
-            } else if (threshold < blur.at<uchar>(y,x-3) &&
-                blur.at<uchar>(y,x-3) > blur.at<uchar>(y,x-2) &&
-                blur.at<uchar>(y,x-2) > blur.at<uchar>(y,x-1) &&
-                blur.at<uchar>(y,x-1) >= blur.at<uchar>(y,x) &&
-                blur.at<uchar>(y,x) <= blur.at<uchar>(y,x+1) &&
-                blur.at<uchar>(y,x+1) < blur.at<uchar>(y,x+2) &&
-                blur.at<uchar>(y,x+2) < blur.at<uchar>(y,x+3) &&
-                threshold < blur.at<uchar>(y,x+3)) {
+            } else if (threshold < blur.at<double>(y,x-3) &&
+                blur.at<double>(y,x-3) > blur.at<double>(y,x-2) &&
+                blur.at<double>(y,x-2) > blur.at<double>(y,x-1) &&
+                blur.at<double>(y,x-1) >= blur.at<double>(y,x) &&
+                blur.at<double>(y,x) <= blur.at<double>(y,x+1) &&
+                blur.at<double>(y,x+1) < blur.at<double>(y,x+2) &&
+                blur.at<double>(y,x+2) < blur.at<double>(y,x+3) &&
+                threshold < blur.at<double>(y,x+3)) {
                 valley.at<uchar>(y,x) = 255;
-            } else if (threshold < blur.at<uchar>(y-3,x-3) &&
-                blur.at<uchar>(y-3,x-3) > blur.at<uchar>(y-2,x-2) &&
-                blur.at<uchar>(y-2,x-2) > blur.at<uchar>(y-1,x-1) &&
-                blur.at<uchar>(y-1,x-1) >= blur.at<uchar>(y,x) &&
-                blur.at<uchar>(y,x) <= blur.at<uchar>(y+1,x+1) &&
-                blur.at<uchar>(y+1,x+1) < blur.at<uchar>(y+2,x+2) &&
-                blur.at<uchar>(y+2,x+2) < blur.at<uchar>(y+3,x+3) &&
-                threshold < blur.at<uchar>(y+3,x+3)) {
+            } else if (threshold < blur.at<double>(y-3,x-3) &&
+                blur.at<double>(y-3,x-3) > blur.at<double>(y-2,x-2) &&
+                blur.at<double>(y-2,x-2) > blur.at<double>(y-1,x-1) &&
+                blur.at<double>(y-1,x-1) >= blur.at<double>(y,x) &&
+                blur.at<double>(y,x) <= blur.at<double>(y+1,x+1) &&
+                blur.at<double>(y+1,x+1) < blur.at<double>(y+2,x+2) &&
+                blur.at<double>(y+2,x+2) < blur.at<double>(y+3,x+3) &&
+                threshold < blur.at<double>(y+3,x+3)) {
                 valley.at<uchar>(y,x) = 255;
-            } else if (threshold < blur.at<uchar>(y+3,x-3) &&
-                blur.at<uchar>(y+3,x-3) > blur.at<uchar>(y+2,x-2) &&
-                blur.at<uchar>(y+2,x-2) > blur.at<uchar>(y+1,x-1) &&
-                blur.at<uchar>(y+1,x-1) >= blur.at<uchar>(y,x) &&
-                blur.at<uchar>(y,x) <= blur.at<uchar>(y-1,x+1) &&
-                blur.at<uchar>(y-1,x+1) < blur.at<uchar>(y-2,x+2) &&
-                blur.at<uchar>(y-2,x+2) < blur.at<uchar>(y-3,x+3) &&
-                threshold < blur.at<uchar>(y-3,x+3)) {
+            } else if (threshold < blur.at<double>(y+3,x-3) &&
+                blur.at<double>(y+3,x-3) > blur.at<double>(y+2,x-2) &&
+                blur.at<double>(y+2,x-2) > blur.at<double>(y+1,x-1) &&
+                blur.at<double>(y+1,x-1) >= blur.at<double>(y,x) &&
+                blur.at<double>(y,x) <= blur.at<double>(y-1,x+1) &&
+                blur.at<double>(y-1,x+1) < blur.at<double>(y-2,x+2) &&
+                blur.at<double>(y-2,x+2) < blur.at<double>(y-3,x+3) &&
+                threshold < blur.at<double>(y-3,x+3)) {
                 valley.at<uchar>(y,x) = 255;
             }
         }
     }
     
-//    cv::namedWindow("valley", CV_WINDOW_NORMAL);
-//    cv::imshow("valley", valley);
-//    cv::waitKey();
+    cv::namedWindow("valley", CV_WINDOW_NORMAL);
+    cv::imshow("valley", valley);
+    cv::waitKey();
     std::vector<std::vector<cv::Point2i> > points = extractEdges(valley);
     cv::Mat clustered = cv::Mat::zeros(blur.rows, blur.cols, CV_8UC1);
     unsigned long max_point_num = 0; // Number of max points in clustered valleys
@@ -820,7 +836,7 @@ void LineDetection::editAllEdges(std::vector<std::vector<std::vector<cv::Point2i
     for (int i = 0; i < edges.size(); ++i) {
         display(img_size, edges[i], "Edit");
         if (i%2 == 1) {
-            saveTwoEdges(edges[i-1], edges[i]);
+            saveTwoSetOfLines(edges[i-1], edges[i]);
         }
     }
 }

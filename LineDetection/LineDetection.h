@@ -24,7 +24,7 @@ private:
     cv::Size2i img_size;
     std::string projection;
     tinyxml2::XMLDocument output;
-    
+    int unit = 5;
     
     typedef struct { // For the display function
         cv::Rect area;
@@ -46,13 +46,13 @@ public:
     LineDetection();
     void loadImageXML(std::string filename);
     cv::Mat makeMask(cv::Mat& white, cv::Mat& black);
-    void display(cv::Size2i size, std::vector<std::vector<cv::Point2i>>& edges, std::string name);
+    void display(cv::Size2i size, std::vector<std::vector<cv::Point2i> >& edges, std::string name);
     cv::Mat detectEdges(cv::Mat& image, cv::Mat& mask);
     std::vector<std::vector<cv::Point2i> > extractEdges(cv::Mat& image);
     std::vector<std::vector<cv::Point2i> > clusteringEdges(std::vector<cv::Point2i> points);
     void processAllImages();
     void saveParameters(); // Save parameters into XML output
-    void saveTwoEdges(std::vector<std::vector<cv::Point2i>>& first, std::vector<std::vector<cv::Point2i>>& second);
+    void saveTwoSetOfLines(std::vector<std::vector<cv::Point2i> >& first, std::vector<std::vector<cv::Point2i> >& second);
     void writeXML(std::string filename);
     std::vector<std::vector<cv::Point2i> > detectValley(cv::Mat &img1, cv::Mat &img2);
     std::vector<std::vector<std::vector<cv::Point2i> > > loadEdgeXML(std::string filename);
