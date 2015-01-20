@@ -206,9 +206,12 @@ void onMouse(int event, int x, int y, int flag, void* data)
 void SimulatingImage::display() {
     cv::Mat img;
     cv::namedWindow("Simulation Image", CV_WINDOW_NORMAL);
+    int steps = 1;
+    int degree = 10; // 0.1 degree
+    cv::createTrackbar("Steps [pixel]", "Simulation Image", &steps, 200);
+    cv::createTrackbar("Rotation [0.1 degree]", "Simulation Image", &degree, 900);
     char key;
     int counter = 0;
-    int times = 1;
     bool print = true;
     
     std::cout << "[Usage]" << std::endl;
@@ -216,7 +219,6 @@ void SimulatingImage::display() {
     std::cout << "\t(e, d, c): Sub x, y, or z" << std::endl;
     std::cout << "\t(u, j, m): Add Rolling, Piching, or Yawing" << std::endl;
     std::cout << "\t(i, k, ,): Sub Rolling, Piching, or Yawing" << std::endl;
-    std::cout << "\t( 1 ~ 9 ): Set steps to 10 ~ 90 times" << std::endl;
     std::cout << "\t(   0   ): Set steps to initial (1 pixel or 0.5 degree)" << std::endl;
     std::cout << "\t( SPACE ): Save patterns" << std::endl;
     std::cout << "\t(  ESC  ): End" << std::endl;
@@ -236,67 +238,40 @@ void SimulatingImage::display() {
         }
         switch (key) {
             case 'r':
-                pattern_center.x += times;
+                pattern_center.x += steps;
                 break;
             case 'f':
-                pattern_center.y += times;
+                pattern_center.y += steps;
                 break;
             case 'v':
-                pattern_center.z += times;
+                pattern_center.z += steps;
                 break;
             case 'e':
-                pattern_center.x -= times;
+                pattern_center.x -= steps;
                 break;
             case 'd':
-                pattern_center.y -= times;
+                pattern_center.y -= steps;
                 break;
             case 'c':
-                pattern_center.z -= times;
+                pattern_center.z -= steps;
                 break;
             case 'u':
-                pitch[0] += d2r(0.1*times);
+                pitch[0] += d2r(0.1*degree);
                 break;
             case 'j':
-                pitch[1] += d2r(0.1*times);
+                pitch[1] += d2r(0.1*degree);
                 break;
             case 'm':
-                pitch[2] += d2r(0.1*times);
+                pitch[2] += d2r(0.1*degree);
                 break;
             case 'i':
-                pitch[0] -= d2r(0.1*times);
+                pitch[0] -= d2r(0.1*degree);
                 break;
             case 'k':
-                pitch[1] -= d2r(0.1*times);
+                pitch[1] -= d2r(0.1*degree);
                 break;
             case ',':
-                pitch[2] -= d2r(0.1*times);
-                break;
-            case '1':
-                times = 1;
-                break;
-            case '2':
-                times = 40;
-                break;
-            case '3':
-                times = 60;
-                break;
-            case '4':
-                times = 80;
-                break;
-            case '5':
-                times = 100;
-                break;
-            case '6':
-                times = 120;
-                break;
-            case '7':
-                times = 140;
-                break;
-            case '8':
-                times = 160;
-                break;
-            case '9':
-                times = 180;
+                pitch[2] -= d2r(0.1*degree);
                 break;
             case '0': // Reset
                 pattern_center.x = pattern_center.y = 0;
