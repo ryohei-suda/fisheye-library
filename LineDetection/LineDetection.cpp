@@ -348,6 +348,7 @@ std::vector<std::vector<cv::Point2i> > LineDetection::extractEdges(cv::Mat& imag
                         p_x.push(p.x + 1); p_y.push(p.y + 1);
                     }
                 }
+                edges.push_back(line);
             }
         }
     }
