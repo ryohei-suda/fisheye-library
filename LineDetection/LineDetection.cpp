@@ -15,7 +15,7 @@
 LineDetection::LineDetection()
 {
     output.NewDeclaration();
-    tinyxml2::XMLElement *root = output.NewElement("edges");
+    tinyxml2::XMLElement *root = output.NewElement("lines");
     output.InsertFirstChild(root);
 }
 
@@ -165,6 +165,8 @@ void LineDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2i
     cv::setMouseCallback(name, onMouse, &selection);
     cv::Mat show = cv::Mat::zeros(size.height, size.width, CV_8UC3);
     
+    int min = (img_size.width > img_size.height) ? img_size.height/4 : img_size.width/4;
+    
     while(1) {
         // Draw lines
         show = cv::Mat::zeros(size.height, size.width, CV_8UC3);
@@ -194,7 +196,7 @@ void LineDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2i
                 if (deleted) {
                     std::vector<std::vector<cv::Point2i> > clustered = clusteringEdges(*line);
                     for (std::vector<std::vector<cv::Point2i>>::iterator it = clustered.begin(); it != clustered.end();) {
-                        if (it->size() < 20) { // Delete edges which have under 20 points
+                        if (it->size() < min) { // Delete edges which have under 20 points
                             it = clustered.erase(it);
                         } else {
                             ++it;
