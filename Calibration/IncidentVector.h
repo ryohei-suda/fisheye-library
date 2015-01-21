@@ -9,6 +9,7 @@
 #ifndef Calibration_IncidentVector_h
 #define Calibration_IncidentVector_h
 
+#include <iostream>
 #include <vector>
 #include <cmath>
 #include <opencv2/core/core.hpp>
@@ -27,12 +28,19 @@ protected:
     double r;
     static std::string projection_name[PROJECTION_NUM];
     static int projection; //Projection Model
+    cv::Point3d part;
+
+    void calcCommonPart(); // Calculate common part of derivatives
+    virtual void aoi() = 0; // Calculate theta
+    virtual cv::Point3d calcDu() = 0;
+    virtual cv::Point3d calcDv() = 0;
+    virtual cv::Point3d calcDf() = 0;
+    virtual std::vector<cv::Point3d> calcDak() = 0;
     
 public:
     cv::Point3d m;
     cv::Point2d point;
     std::vector<cv::Point3d> derivatives;
-    static const int U = 0, V = 1, F = 2;
     static int nparam; // Number of parameters (u0, v0, f, a1, a2, ...)
     
     IncidentVector(cv::Point2d p);
@@ -61,14 +69,12 @@ public:
     static void setProjection(std::string projection);
     static int getProjection() { return projection; }
     static std::string getProjectionName() { return projection_name[projection]; }
+    double getTheta() {
+        return theta;
+    }
     
     void calcDerivatives();
     void calcM();
-    virtual void aoi() = 0; // Calculate theta
-    virtual cv::Point3d calcDu() = 0;
-    virtual cv::Point3d calcDv() = 0;
-    virtual cv::Point3d calcDf() = 0;
-    virtual std::vector<cv::Point3d> calcDak() = 0;
 };
 
 

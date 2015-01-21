@@ -14,15 +14,15 @@
 
 class EquisolidAngleProjection : public IncidentVector
 {
-public:
-    EquisolidAngleProjection(cv::Point2d p);
-    
-    void calcM();
+private:
     void aoi(); // Calculate theta
     cv::Point3d calcDu();
     cv::Point3d calcDv();
     cv::Point3d calcDf();
     std::vector<cv::Point3d> calcDak();
+    
+public:
+    EquisolidAngleProjection(cv::Point2d p);
 };
 
 #endif /* defined(__Calibration__EquisolidAngleProjection__) */

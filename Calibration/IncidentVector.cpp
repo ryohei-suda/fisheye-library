@@ -58,13 +58,24 @@ void IncidentVector::calcM()
     }
 }
 
+void IncidentVector::calcCommonPart()
+{
+    if (r != 0) {
+        part.x = (point.x - center.x)/r * cos(theta);
+        part.y = (point.y - center.y)/r * cos(theta);
+        part.z = -sin(theta);
+    } else {
+        part.x = part.y = part.z = 0;
+    }
+}
+
 void IncidentVector::calcDerivatives()
 {
+    calcCommonPart();
     derivatives.clear();
     derivatives.push_back(calcDu());
     derivatives.push_back(calcDv());
     derivatives.push_back(calcDf());
     std::vector<cv::Point3d> dak = calcDak();
     derivatives.insert(derivatives.end(), dak.begin(), dak.end());
-    
 }

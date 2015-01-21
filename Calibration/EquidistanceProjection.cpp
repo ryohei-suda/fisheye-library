@@ -37,9 +37,7 @@ cv::Point3d EquidistanceProjection::calcDu()
             tu += (2*i+3) * a[i] * pow(r/f0, 2*i+2);
         }
         tu *= -(point.x-center.x) / (r * f);
-        mu.x += (point.x-center.x) / r * cos(theta) * tu;
-        mu.y += (point.y-center.y) / r * cos(theta) * tu;
-        mu.z += -sin(theta) * tu;
+        mu += part * tu;
         return mu;
         
     } else {
@@ -60,9 +58,7 @@ cv::Point3d EquidistanceProjection::calcDv()
             tv += (2*i+3) * a[i] * pow(r/f0, 2*i+2);
         }
         tv *= -(point.y-center.y) / (r * f);
-        mv.x += (point.x-center.x) / r * cos(theta) * tv;
-        mv.y += (point.y-center.y) / r * cos(theta) * tv;
-        mv.z += -sin(theta) * tv;
+        mv += part * tv;
         return mv;
         
     } else {
@@ -74,10 +70,7 @@ cv::Point3d EquidistanceProjection::calcDf()
     cv::Point3d mf;
     
     if (r != 0) {
-        mf.x = (point.x - center.x) / r * cos(theta);
-        mf.y = (point.y - center.y) / r * cos(theta);
-        mf.z = -sin(theta);
-        mf *= -1/f * theta;
+        mf = part * (-1/f * theta);
         return mf;
     } else {
         return cv::Point3d(0, 0, 0);
@@ -89,9 +82,7 @@ std::vector<cv::Point3d> EquidistanceProjection::calcDak()
     std::vector<cv::Point3d> ms;
     if (r != 0) {
         cv::Point3d m;
-        m.x = (f0/f) * ((point.x-center.x)/r * cos(theta));
-        m.y = (f0/f) * ((point.y-center.y)/r * cos(theta));
-        m.z = (f0/f) * (-sin(theta));
+        m = part * (f0/f);
         for(int i=0; i<a.size(); ++i) {
             ms.push_back(pow(r/f0, 2*i+3) * m);
         }

@@ -11,6 +11,14 @@
 
 int main(int argc, const char * argv[]) {
     
+    
+    cv::Mat src = cv::imread("/Users/ryoheisuda/Dropbox/univ/lab/素材/grid04.png");
+    cv::Mat corners;
+    bool found = cv::findChessboardCorners(src, cv::Size2i(9,6), corners);
+    cv::drawChessboardCorners(src, cv::Size2i(9,6), corners, found);
+    cv::imshow("pattern", src);
+    cv::waitKey();
+    
     CameraMotion cm;
     
     cv::Mat img1, img2;

@@ -11,6 +11,10 @@
 
 #include <cmath>
 #include <vector>
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <iomanip>
 #include <opencv2/opencv.hpp>
 
 class SimulatingImage
@@ -32,10 +36,11 @@ private:
     double f0; // Scale constant
     std::vector<double> a; // Distortion parameter
     cv::Size2i img_size;
+    double fov; // Field of View in radian
     
 public:
-    double d2r(double degree) { return degree * M_1_PI / 180.; } // Convert degree to radian
-    double r2d(double radian) { return radian * 180 / M_1_PI; } // Convert radian to degree
+    double d2r(double degree) { return degree * M_PI / 180.; } // Convert degree to radian
+    double r2d(double radian) { return radian * 180 / M_PI; } // Convert radian to degree
     
     // Setter
     void setPatternSize(double width, double height) { pattern_size.width = width; pattern_size.height = height; };
@@ -73,6 +78,8 @@ public:
     void setA(std::vector<double> a_) { a = a_; }
     void setImgSize(cv::Size2i size) { img_size = size; }
     void setImgSize(int width, int height) { img_size.width = width; img_size.height = height; }
+    void setFoVRadian(double fov) { this->fov = fov/2; }
+    void setFoVDegree(double fov) { this->fov = d2r(fov/2);}
     
     void calcCorners();
     cv::Point3d getRay(cv::Point2d point, int model); // model is projection type, 0: Equidistance
@@ -81,7 +88,7 @@ public:
     double calcS(cv::Point3d p);
     double calcT(cv::Point3d p);
     
-    cv::Mat projectPlane();
+    cv::Mat projectPlane(int pattern); // (pattern) 0: check, 1: vertical strip, 2: inverse of 1, 3: horizontal strip, 4: inverse of 3
     void display();
 };
 
