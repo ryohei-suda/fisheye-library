@@ -24,7 +24,7 @@ private:
     cv::Size2i img_size;
     std::string projection;
     tinyxml2::XMLDocument output;
-    int unit = 5;
+    int unit = 0.5; // 1/unit = 0.1 pixel when unit = 10
     
     typedef struct { // For the display function
         cv::Rect area;
@@ -55,6 +55,7 @@ public:
     void saveTwoSetOfLines(std::vector<std::vector<cv::Point2i> >& first, std::vector<std::vector<cv::Point2i> >& second);
     void writeXML(std::string filename);
     std::vector<std::vector<cv::Point2i> > detectValley(cv::Mat &img1, cv::Mat &img2);
+    std::vector<std::vector<cv::Point2i> > detectLines(cv::Mat &img1, cv::Mat &img2);
     std::vector<std::vector<std::vector<cv::Point2i> > > loadEdgeXML(std::string filename);
     void editAllEdges(std::vector<std::vector<std::vector<cv::Point2i> > > edges);
 };

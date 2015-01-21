@@ -20,6 +20,7 @@ int main(int argc, const char * argv[])
     std::string fname;
     std::cin >> fname;
     LineDetection ld;
+//    ld.editAllEdges(ld.loadEdgeXML(fname));
 
 //    std::vector<std::vector<std::vector<cv::Point2i> > > edges = ld.loadEdgeXML(fname);
 //    ld.saveParameters();
@@ -33,6 +34,7 @@ int main(int argc, const char * argv[])
     std::string output;
     std::cin >> output;
     ld.writeXML(output);
-
+    
+    
     return 0;
 }

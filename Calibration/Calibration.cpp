@@ -21,7 +21,7 @@ void Calibration::loadData(std::string filename) {
     if (tinyxml2::XML_NO_ERROR != doc.LoadFile(filename.c_str())) {
         std::cerr << "Cannot open " << filename << std::endl;
     }
-    tinyxml2::XMLElement *root = doc.FirstChildElement("edges");
+    tinyxml2::XMLElement *root = doc.FirstChildElement("lines");
     
     double unit = atof(root->FirstChildElement("pixel_size")->GetText());
     double f = atof(root->FirstChildElement("focal_length")->GetText()) / unit;
@@ -47,7 +47,7 @@ void Calibration::loadData(std::string filename) {
         Pair tmp;
         
         // edge1
-        tinyxml2::XMLElement *edge1 = pair->FirstChildElement("edge1");
+        tinyxml2::XMLElement *edge1 = pair->FirstChildElement("lines1");
         tinyxml2::XMLElement *line = edge1->FirstChildElement("line");
         while (line != NULL) {
             std::vector<IncidentVector *> edge; // One line of points
@@ -79,7 +79,7 @@ void Calibration::loadData(std::string filename) {
         }
         
         // edge2
-        tinyxml2::XMLElement *edge2 = pair->FirstChildElement("edge2");
+        tinyxml2::XMLElement *edge2 = pair->FirstChildElement("lines2");
         line = edge2->FirstChildElement("line");
         while (line != NULL) {
             std::vector<IncidentVector *> edge; // One line of points
@@ -157,6 +157,7 @@ void Calibration::calibrate(bool divide)
     std::cout << "======================================" << std::endl;
     
     int iterations = 0;
+    cv::Mat delta_prev= cv::Mat::ones(IncidentVector::nparam, 1, CV_64F);
     while (true) {
         cv::Point2d center = IncidentVector::getCenter();
         double f = IncidentVector::getF();
@@ -259,19 +260,20 @@ void Calibration::calibrate(bool divide)
         //    ( 7 ) u0 Ã ˜u0, v0 Ã ˜v0, f Ã ˜ f, a1 Ã ˜a1, a2 Ã ˜a2, ... とし，jΔu0j < ²0, jΔv0j < ²0,
         //    jΔfj < ²f , jΔa1j < ²1, jΔa2j < ²2, ... ならu0, v0, f, a1, a2, ..., J を返して終了す
         //    る．そうでなければJ0 Ã J, C Ã C/10 としてステップ(2) に戻る
-        bool flag = true;
+        bool converged = true;
         for (int i = 0; i < IncidentVector::nparam; ++i) {
-            double epsilon = 0.001;
+            double epsilon = 0.0001;
             if (i > 2) {
-                epsilon = 1.0 / pow(10, i+2);
+                epsilon = 1.0 / pow(10, i+4);
             }
             if (fabs(delta.at<double>(i)) >= epsilon) {
-                flag = false;
+                converged = false;
                 break;
             }
         }
+        delta_prev = delta.clone();
         
-        if (flag) {
+        if (converged) {
             break;
             
         } else {

@@ -18,16 +18,16 @@ int main(int argc, const char * argv[]) {
     si.setInterval(250);
     si.setPitchRadian(0, 0, 0);
     si.setImgSize(1600, 1200);
-    si.setOpticalCenter(805, 597);
-    si.setFocalLength(400);
-    si.setF0(400);
+    si.setOpticalCenter(793, 606);
+    si.setFocalLength(450);
+    si.setF0(450);
     si.setFoVDegree(200);
     std::vector<double> a;
-    a.push_back(0.0001);
-    a.push_back(0.00002);
-    a.push_back(0.000003);
-    a.push_back(0.0000004);
-    a.push_back(0.00000005);
+    a.push_back(5e-3);
+    a.push_back(6e-4);
+    a.push_back(7e-5);
+    a.push_back(8e-6);
+    a.push_back(9e-7);
     si.setA(a);
     
     si.display();

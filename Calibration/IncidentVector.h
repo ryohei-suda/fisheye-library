@@ -18,7 +18,7 @@
 
 class IncidentVector
 {
-private:
+protected:
     static double f; // Focal length (pixel unit)
     static double f0; // Scale constant
     static std::vector<double> a; // Distortion parameters
