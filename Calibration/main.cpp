@@ -102,7 +102,7 @@ int main(int argc, const char * argv[])
 //    IncidentVector::initA(0);
     calib.calibrate(false);
 //    IncidentVector::initA(a_size);
-    calib.calibrate(true);
+    calib.calibrate(false);
     
     std::string outname;
     std::cout << "Type output filename > ";

@@ -146,6 +146,13 @@ void Calibration::calibrate(bool divide)
     
     double j1 = J1(), j2 = J2(), j3 = J3();
     double gamma[3] = { j1, j2, j3 };
+   gamma[1] = edges.size();
+    gamma[2] = gamma[1]/2;
+    long lines = 0;
+    for (auto &pair : edges) {
+        lines += pair.edge[0].size() + pair.edge[1].size();
+    }
+    gamma[0] = lines;
 
     if (divide) {
         J0 = j1 / gamma[0] + j2 / gamma[1] + j3 / gamma[2];
@@ -192,6 +199,7 @@ void Calibration::calibrate(bool divide)
             }
         }
         
+        std::cout << right << "\n" << left << std::endl;
         
         cv::Mat delta;
         double J_;
