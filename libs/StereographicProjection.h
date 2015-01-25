@@ -15,7 +15,6 @@
 class StereographicProjection : public IncidentVector
 {
 private:
-    void aoi(); // Calculate theta
     cv::Point3d calcDu();
     cv::Point3d calcDv();
     cv::Point3d calcDf();
@@ -23,6 +22,7 @@ private:
     
 public:
     StereographicProjection(cv::Point2d p);
+    static double aoi(double r); // Calculate theta
 };
 
 #endif /* defined(__Calibration__StereographicProjection__) */

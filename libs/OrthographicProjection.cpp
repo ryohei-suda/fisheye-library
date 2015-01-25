@@ -13,15 +13,18 @@ OrthographicProjection::OrthographicProjection(cv::Point2d p): IncidentVector(p)
 {
 }
 
-void OrthographicProjection::aoi()
+double OrthographicProjection::aoi(double r)
 {
-    theta = r / f0;
+    double t;
+    t = r / f0;
     
     for(int i = 0; i < a.size(); ++i) {
-        theta += a[i] * pow(r/f0, 3+2*i);
+        t += a[i] * pow(r/f0, 3+2*i);
     }
-    theta *= f0 / f;
-    theta = asin(theta);
+    t *= f0 / f;
+    t = asin(t);
+    
+    return t;
 }
 
 cv::Point3d OrthographicProjection::calcDu()

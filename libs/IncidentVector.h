@@ -31,7 +31,6 @@ protected:
     cv::Point3d part;
 
     void calcCommonPart(); // Calculate common part of derivatives
-    virtual void aoi() = 0; // Calculate theta
     virtual cv::Point3d calcDu() = 0;
     virtual cv::Point3d calcDv() = 0;
     virtual cv::Point3d calcDf() = 0;
@@ -75,6 +74,7 @@ public:
     
     void calcDerivatives();
     void calcM();
+    static double aoi(double r); // Calculate theta
 };
 
 

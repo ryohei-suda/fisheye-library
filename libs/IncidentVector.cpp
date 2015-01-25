@@ -21,6 +21,8 @@ IncidentVector::IncidentVector(cv::Point2d p)
     point = p;
 }
 
+double IncidentVector::aoi(double r) { return -1; }
+
 void IncidentVector::setParameters(double f, double f0, std::vector<double> a, cv::Size2i img_size, cv::Point2d center)
 {
     IncidentVector::f = f;
@@ -46,7 +48,7 @@ void IncidentVector::setProjection(std::string projection)
 void IncidentVector::calcM()
 {
     r = sqrt(pow(center.x-point.x, 2) + pow(center.y-point.y, 2));
-    aoi();
+    theta = aoi(r);
     if (r != 0) {
         m.x = ((point.x - center.x) / r) * sin(theta);
         m.y = ((point.y - center.y) / r) * sin(theta);

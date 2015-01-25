@@ -15,13 +15,13 @@
 class EquidistanceProjection : public IncidentVector
 {
 private:
-    void aoi(); // Calculate theta
     cv::Point3d calcDu();
     cv::Point3d calcDv();
     cv::Point3d calcDf();
     std::vector<cv::Point3d> calcDak();
     
 public:
+    static double aoi(double r); // Calculate theta
     EquidistanceProjection(cv::Point2d p);
 };
 
