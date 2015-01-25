@@ -12,7 +12,6 @@
 #include <fstream>
 #include <sstream>
 #include <opencv2/opencv.hpp>
-#include "IncidentVector.h"
 #include "Pair.h"
 #include "../libs/tinyxml2.h"
 #include "Calibration.h"
@@ -99,10 +98,12 @@ int main(int argc, const char * argv[])
 //        calib.calibrate(false);
 //    }
 
-//    IncidentVector::initA(0);
+    IncidentVector::initA(0);
     calib.calibrate(false);
-//    IncidentVector::initA(a_size);
+    IncidentVector::initA(a_size);
     calib.calibrate(false);
+//    calib.calibrate(true);
+//    calib.calibrate2();
     
     std::string outname;
     std::cout << "Type output filename > ";

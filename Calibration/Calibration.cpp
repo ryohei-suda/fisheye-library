@@ -62,7 +62,7 @@ void Calibration::loadData(std::string filename) {
                         edge.push_back(new StereographicProjection(point));
                         break;
                     case 1:
-                        //TODO add Perspective projection
+                        edge.push_back(new OrthographicProjection(point));
                         break;
                     case 2:
                         edge.push_back(new EquidistanceProjection(point));
@@ -137,6 +137,8 @@ void Calibration::save(std::string filename)
 void Calibration::calibrate(bool divide)
 {
     const auto start_time = std::chrono::system_clock::now();
+    double J0;
+    double C = 0.0001;
     
     for (auto &pair : edges) {
         pair.calcM();
@@ -145,22 +147,24 @@ void Calibration::calibrate(bool divide)
     }
     
     double j1 = J1(), j2 = J2(), j3 = J3();
-    double gamma[3] = { j1, j2, j3 };
-   gamma[1] = edges.size();
-    gamma[2] = gamma[1]/2;
-    long lines = 0;
-    for (auto &pair : edges) {
-        lines += pair.edge[0].size() + pair.edge[1].size();
-    }
-    gamma[0] = lines;
+    double gamma[3];
+    C = 0.0001;
 
     if (divide) {
-        J0 = j1 / gamma[0] + j2 / gamma[1] + j3 / gamma[2];
-        std::cout << "J1  \t" << j1/gamma[0] << "\nJ2  \t" << j2/gamma[1] << "\nJ3  \t" << j3/gamma[2] << std::endl;
+        gamma[0] = j1; gamma[1] = j2; gamma[2] = j3;
     } else {
-        J0 = j1 + j2 + j3;
-        std::cout << "J1  \t" << j1 << "\nJ2  \t" << j2 << "\nJ3  \t" << j3 << std::endl;
+        gamma[0]= 0;
+        for (auto &pair : edges) {
+            gamma[0] += pair.edge[0].size() + pair.edge[1].size();
+        }
+        gamma[1] = edges.size();
+        gamma[2] = gamma[1]/2;
+        
+        gamma[0] = gamma[1] = gamma[2] = 1;
     }
+    J0 = j1 / gamma[0] + j2 / gamma[1] + j3 / gamma[2];
+    std::cout << "J1  \t" << j1/gamma[0] << "\nJ2  \t" << j2/gamma[1] << "\nJ3  \t" << j3/gamma[2] << std::endl;
+    std::cout << "J1  \t" << j1 << "\nJ2  \t" << j2 << "\nJ3  \t" << j3 << std::endl;
     std::cout << "======================================" << std::endl;
     
     int iterations = 0;
@@ -186,20 +190,10 @@ void Calibration::calibrate(bool divide)
         for (int i = 0; i < IncidentVector::nparam; ++i) {
             for (int j = 0; j < IncidentVector::nparam; ++j) {
                 // (1+C) isn't calculated here, look at the next while loop
-                if (divide) {
-                    left.at<double>(i, j) = J1cc(i, j) / gamma[0] + J2cc(i, j) / gamma[1] + J3cc(i, j) / gamma[2];
-                } else {
-                    left.at<double>(i, j) = J1cc(i, j) + J2cc(i, j) + J3cc(i, j);
-                }
+                left.at<double>(i, j) = J1cc(i, j) / gamma[0] + J2cc(i, j) / gamma[1] + J3cc(i, j) / gamma[2];
             }
-            if (divide) {
                 right.at<double>(i) = J1c(i) / gamma[0] + J2c(i) / gamma[1] + J3c(i) / gamma[2];
-            } else {
-                right.at<double>(i) = J1c(i) + J2c(i) + J3c(i);
-            }
         }
-        
-        std::cout << right << "\n" << left << std::endl;
         
         cv::Mat delta;
         double J_;
@@ -236,19 +230,12 @@ void Calibration::calibrate(bool divide)
             j1 = J1();
             j2 = J2();
             j3 = J3();
-            if (divide) {
-                J_ =  j1 / gamma[0] + j2 / gamma[1] + j3 / gamma[2];
-                std::cout << "C: " << C << "\tJ0: " << J0 << "\tJ_: " << J_;
-                std::cout.precision(10);
-                std::cout.width(10);
-                std::cout << "\tJ1_: " << j1/gamma[0] << "\tJ2_: " << j2/gamma[1] << "\tJ3_: " << j3/gamma[2] << std::endl;
-            } else {
-                J_ = j1 + j2 + j3;
-                std::cout << "C: " << C << "\tJ0: " << J0 << "\tJ_: " << J_;
-                std::cout.precision(10);
-                std::cout.width(10);
-                std::cout << "\tJ1_: " << j1 << "\tJ2_: " << j2 << "\tJ3_: " << j3 << std::endl;
-            }
+            J_ =  j1 / gamma[0] + j2 / gamma[1] + j3 / gamma[2];
+            std::cout << "C: " << C << "\tJ0: " << J0 << "\tJ_: " << J_;
+            std::cout.precision(10);
+            std::cout.width(10);
+            std::cout << "\tJ1_: " << j1/gamma[0] << "\tJ2_: " << j2/gamma[1] << "\tJ3_: " << j3/gamma[2] << std::endl;
+            std::cout << "J1_: " << j1 << "\tJ2_: " << j2 << "\tJ3_: " << j3 << std::endl;
             
             
             //    ( 6 ) ˜ J < J0 なら次へ進む．そうでなければC Ã 10C としてステップ(4) に戻る．
@@ -269,19 +256,19 @@ void Calibration::calibrate(bool divide)
         //    jΔfj < ²f , jΔa1j < ²1, jΔa2j < ²2, ... ならu0, v0, f, a1, a2, ..., J を返して終了す
         //    る．そうでなければJ0 Ã J, C Ã C/10 としてステップ(2) に戻る
         bool converged = true;
-        for (int i = 0; i < IncidentVector::nparam; ++i) {
-            double epsilon = 0.0001;
-            if (i > 2) {
-                epsilon = 1.0 / pow(10, i+4);
-            }
-            if (fabs(delta.at<double>(i)) >= epsilon) {
+        double epsilon = 1.0e-5;
+        if (delta.at<double>(0) / center.x > epsilon ||
+            delta.at<double>(1) / center.y > epsilon ||
+            delta.at<double>(2) / f > epsilon) {
+            converged = false;
+        }
+        for (int i = 3; i < IncidentVector::nparam && converged; ++i) {
+            if (fabs(delta.at<double>(i)) /  a.at(i-3) > epsilon) {
                 converged = false;
-                break;
             }
         }
-        delta_prev = delta.clone();
         
-        if (converged) {
+        if (converged || J_ == J0) {
             break;
             
         } else {
@@ -295,6 +282,154 @@ void Calibration::calibrate(bool divide)
     int seconds = (int)std::chrono::duration_cast<std::chrono::seconds>(duration).count() - minutes*60;
     std::cout << "Calibration has been finished in " << minutes << " minutes " << seconds << " seconds" << std::endl;
 }
+
+void Calibration::calibrate2()
+{
+    const auto start_time = std::chrono::system_clock::now();
+    double J0;
+    double C = 0.0001;
+    
+    double (Calibration::*J[3])() = {&Calibration::J1, &Calibration::J2,&Calibration::J3};
+    double (Calibration::*Jc[3])(int) = {&Calibration::J1c, &Calibration::J2c,&Calibration::J3c};
+    double (Calibration::*Jcc[3])(int, int) = {&Calibration::J1cc, &Calibration::J2cc,&Calibration::J3cc};
+    while(true){
+    for (int t = 2; t >= 0; --t) { // For each of Orthongonality, Parallelism, and Colinearity
+        
+        for (auto &pair : edges) {
+            pair.calcM();
+            pair.calcNormal();
+            pair.calcLine();
+        }
+        C = 0.0001;
+        J0 = (this->*J[t])();
+        switch (t) {
+            case 0:
+                std::cout << "Colinearity ";
+                break;
+            case 1:
+                std::cout << "Parallelism ";
+                break;
+            case 2:
+                std::cout << "Othogonality ";
+                break;
+        }
+        std::cout << "J  \t" << J0 << std::endl;
+        
+        std::cout << "======================================" << std::endl;
+        
+        int iterations = 0;
+        cv::Mat delta_prev= cv::Mat::ones(IncidentVector::nparam, 1, CV_64F);
+        while (true) {
+            ++iterations;
+            cv::Point2d center = IncidentVector::getCenter();
+            double f = IncidentVector::getF();
+            std::vector<double> a = IncidentVector::getA();
+            
+            //    ( 2 ) 式(3) によって入射角θκα を計算し，式(6) によって入射光ベクトルmκα を計算し，
+            //    式(7), (10), (13) によって∂mκα/∂c を計算する(c = u0, v0, f, a1, a2, ...)．
+            for (auto &pair : edges) {
+                pair.calcM();
+                pair.calcNormal();
+                pair.calcLine();
+                pair.calcDerivatives();
+            }
+            
+            //    ( 3 ) それらを用いてJ のパラメータに関する1 階微分Jc，2 階微分Jcc0 を計算する
+            cv::Mat left(IncidentVector::nparam, IncidentVector::nparam, CV_64F);
+            cv::Mat right(IncidentVector::nparam, 1, CV_64F);
+            
+            for (int i = 0; i < IncidentVector::nparam; ++i) {
+                for (int j = 0; j < IncidentVector::nparam; ++j) {
+                    // (1+C) isn't calculated here, look at the next while loop
+                    left.at<double>(i, j) = (this->*Jcc[t])(i, j);
+                }
+                right.at<double>(i) = (this->*Jc[t])(i);
+            }
+            
+            cv::Mat delta;
+            double J_;
+            while (true) {
+                cv::Mat cmat = cv::Mat::ones(IncidentVector::nparam, IncidentVector::nparam, CV_64F); // To calculate (1+C)
+                for (int i = 0; i < IncidentVector::nparam; ++i) {
+                    cmat.at<double>(i,i) = 1+C;
+                }
+                //    ( 4 ) 次の連立1次方程式を解いてΔu0, Δv0, Δf, Δa1, ... を計算する．
+                cv::solve(left.mul(cmat), -right, delta);
+//                std::cout << "------------------------ Iteration "<< iterations << " -------------------------" << std::endl;
+//                std::cout << "Delta: " << delta << std::endl;
+                
+                //    ( 5 ) 次のように˜u0, ˜v0, ˜ f, ˜a1, a2, ... を計算し，それに対するJ の値を˜ J とする．
+                //    ˜u0 = u0+Δu0, ˜v = v0+Δv0, ˜ f = f+Δf, ˜a1 = a1+Δa1, ˜a2 = a2+Δa2, ... (48)
+                cv::Point2d center_(center.x + delta.at<double>(0), center.y + delta.at<double>(1));
+                double f_ = f + delta.at<double>(2);
+                std::vector<double> a_;
+                for (int i = 0; i < a.size(); ++i) {
+                    a_.push_back(a[i] + delta.at<double>(i+3));
+                }
+                
+                // Recalculate m and relatives based on new parameters
+                IncidentVector::setF(f_);
+                IncidentVector::setA(a_);
+                IncidentVector::setCenter(center_);
+                for (auto &pair : edges) {
+                    pair.calcM();
+                    pair.calcNormal();
+                    pair.calcLine();
+                }
+                
+                J_ = (this->*J[t])();
+//                std::cout << "C: " << C << "\tJ0: " << J0 << "\tJ_: " << J_ << std::endl;
+                
+                
+                //    ( 6 ) ˜ J < J0 なら次へ進む．そうでなければC Ã 10C としてステップ(4) に戻る．
+                if ( J_  <= J0) {
+                    std::cout << "------------------------ Iteration "<< iterations << " -------------------------" << std::endl;
+                    std::cout << "Delta: " << delta << std::endl;
+                    std::cout << "C: " << C << "\tJ0: " << J0 << "\tJ_: " << J_ << std::endl;
+                    std::cout << "Center:\t" << center_ << std::endl;
+                    std::cout << "     f:\t" << f_ << std::endl;
+                    for (int i = 0; i < a_.size(); ++i) {
+                        std::cout << "    a" << i << ":\t" << a_[i] << std::endl;
+                    }
+                    
+                    break;
+                } else {
+                    C *= 10;
+                }
+            }
+            
+            //    ( 7 ) u0 Ã ˜u0, v0 Ã ˜v0, f Ã ˜ f, a1 Ã ˜a1, a2 Ã ˜a2, ... とし，jΔu0j < ²0, jΔv0j < ²0,
+            //    jΔfj < ²f , jΔa1j < ²1, jΔa2j < ²2, ... ならu0, v0, f, a1, a2, ..., J を返して終了す
+            //    る．そうでなければJ0 Ã J, C Ã C/10 としてステップ(2) に戻る
+            bool converged = true;
+            double epsilon = 1.0e-5;
+            if (delta.at<double>(0) / center.x > epsilon ||
+                delta.at<double>(1) / center.y > epsilon ||
+                delta.at<double>(2) / f > epsilon) {
+                converged = false;
+            }
+            for (int i = 3; i < IncidentVector::nparam && converged; ++i) {
+                if (fabs(delta.at<double>(i)) /  a.at(i) > epsilon) {
+                    converged = false;
+                }
+            }
+            
+            if (converged) {
+                break;
+                
+            } else {
+                J0 = J_;
+                C /= 10.0;
+            }
+        }
+    }
+    }
+    const auto duration = std::chrono::system_clock::now() - start_time;
+    int minutes = (int)std::chrono::duration_cast<std::chrono::minutes>(duration).count();
+    int seconds = (int)std::chrono::duration_cast<std::chrono::seconds>(duration).count() - minutes*60;
+    std::cout << "Calibration has been finished in " << minutes << " minutes " << seconds << " seconds" << std::endl;
+}
+
 
 double Calibration::J1()
 {

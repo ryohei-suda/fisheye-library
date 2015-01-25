@@ -17,10 +17,11 @@
 #include <chrono>
 //#include <Eigen/Core>
 #include <opencv2/opencv.hpp>
-#include "IncidentVector.h"
-#include "EquidistanceProjection.h"
-#include "EquisolidAngleProjection.h"
-#include "StereographicProjection.h"
+#include "../libs/IncidentVector.h"
+#include "../libs/EquidistanceProjection.h"
+#include "../libs/EquisolidAngleProjection.h"
+#include "../libs/StereographicProjection.h"
+#include "../libs/OrthographicProjection.h"
 #include "Pair.h"
 #include "../libs/tinyxml2.h"
 
@@ -31,27 +32,26 @@ public:
 //    cv::Point2d center;
 //    cv::Size2i img_size;
 //    double f; // focal length is pixel unit
-    double C = 0.0001;
 //    double const f0 = 150; // Scale constant;
 //    std::vector<double> a;
     std::vector<Pair> edges;
-    double J0, gamma[3];
     
     void setParameters(std::vector<Pair>& edges, double& f, double& f0, cv::Point2d& center, cv::Size2i& img_size, int a_size);
     void loadData(std::string);
     void save(std::string);
     
     void calibrate(bool divide); // Do calibrate
+    void calibrate2(); // For new optimazation test
     
     
     //大文字の後に付いてるcは微分を表している
-    double J1(); // 共線性
+    double J1(); // Colinearity
     double J1c(int);
     double J1cc(int, int);
-    double J2(); // 平行性
+    double J2(); // Parallelism
     double J2c(int);
     double J2cc(int, int);
-    double J3(); // 直交性
+    double J3(); // Orthogonality
     double J3c(int);
     double J3cc(int, int);
 };
