@@ -13,6 +13,11 @@
 #include <fstream>
 #include <vector>
 #include <opencv2/opencv.hpp>
+#include "../libs/IncidentVector.h"
+#include "../libs/OrthographicProjection.h"
+#include "../libs/StereographicProjection.h"
+#include "../libs/EquisolidAngleProjection.h"
+#include "../libs/EquidistanceProjection.h"
 
 class Reprojection {
 public:
@@ -24,6 +29,7 @@ public:
     std::vector<double> t2r; // theta to radius
     std::vector<double> r2t;
     double rad_step;
+    std::string projection;
     
     void loadPrameters(std::string);
     void theta2radius();
