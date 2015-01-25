@@ -21,6 +21,8 @@ void Reprojection::loadPrameters(std::string filename)
     fs["f0"] >> f0;
     fs["center"] >> center;
     fs["img_size"] >> img_size;
+    fs["projection"] >> projection;
+    IncidentVector::setProjection(projection);
     
     a.clear();
     cv::FileNode fn = fs["a"];
@@ -52,11 +54,25 @@ void Reprojection::theta2radius()
     r2t.resize(theta_size);
     for (int i = 0; i < theta_size; ++i) {
         double r = (double)i / precision;
-        r2t[i] = r/f0;
-        for (int j = 0; j != a.size(); ++j) {
-            r2t[i] += a[j] * pow(r/f0, j*2+3);
+        
+        cv::Point2d point(r,0);
+        IncidentVector *iv;
+        switch (IncidentVector::getProjection()) {
+            case 0:
+                iv = new StereographicProjection(point);
+                break;
+            case 1:
+                iv = new OrthographicProjection(point);
+                break;
+            case 2:
+                iv = new EquidistanceProjection(point);
+                break;
+            case 3:
+               iv = new EquisolidAngleProjection(point);
+                break;
         }
-        r2t[i] *= f0/f;
+        iv->calcM();
+        r2t[i] = iv->getTheta();
     }
     
     int r_size = max_r * precision + 10;
