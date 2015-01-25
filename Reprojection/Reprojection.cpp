@@ -13,6 +13,11 @@ void Reprojection::loadPrameters(std::string filename)
 {
     cv::FileStorage fs(filename, cv::FileStorage::READ);
     
+    double f, f0;
+    cv::Point2d center;
+    cv::Size2i img_size;
+    std::vector<double> a;
+    
     if (!fs.isOpened()) {
         std::cerr << filename << " cannnot be opened!" << std::endl;
         exit(-1);
@@ -22,7 +27,6 @@ void Reprojection::loadPrameters(std::string filename)
     fs["center"] >> center;
     fs["img_size"] >> img_size;
     fs["projection"] >> projection;
-    IncidentVector::setProjection(projection);
     
     a.clear();
     cv::FileNode fn = fs["a"];
@@ -30,6 +34,9 @@ void Reprojection::loadPrameters(std::string filename)
     for (; it != fn.end(); ++it) {
         a.push_back((static_cast<double>(*it)));
     }
+    
+    IncidentVector::setProjection(projection);
+    IncidentVector::setParameters(f, f0, a, img_size, center);
 }
 
 
@@ -37,15 +44,15 @@ void Reprojection::theta2radius()
 {
     double max_r = 0;
     // Calculate the longest distance between optical center and image corner
-    if (img_size.width - center.x > img_size.width / 2.0) {
-        max_r += pow(img_size.width - center.x, 2);
+    if (IncidentVector::getImgSize().width - IncidentVector::getCenter().x > IncidentVector::getImgSize().width / 2.0) {
+        max_r += pow(IncidentVector::getImgSize().width - IncidentVector::getCenter().x, 2);
     } else {
-        max_r += pow(center.x, 2);
+        max_r += pow(IncidentVector::getCenter().x, 2);
     }
-    if (img_size.height - center.y > img_size.height / 2.0) {
-        max_r += pow(img_size.height - center.y, 2);
+    if (IncidentVector::getImgSize().height - IncidentVector::getCenter().y > IncidentVector::getImgSize().height / 2.0) {
+        max_r += pow(IncidentVector::getImgSize().height - IncidentVector::getCenter().y, 2);
     } else {
-        max_r += pow(center.y, 2);
+        max_r += pow(IncidentVector::getCenter().y, 2);
     }
     max_r = sqrt(max_r);
     max_r = 2000;
@@ -55,24 +62,21 @@ void Reprojection::theta2radius()
     for (int i = 0; i < theta_size; ++i) {
         double r = (double)i / precision;
         
-        cv::Point2d point(r,0);
-        IncidentVector *iv;
         switch (IncidentVector::getProjection()) {
             case 0:
-                iv = new StereographicProjection(point);
+                r2t[i] = StereographicProjection::aoi(r);
                 break;
             case 1:
-                iv = new OrthographicProjection(point);
+                r2t[i] = OrthographicProjection::aoi(r);
                 break;
             case 2:
-                iv = new EquidistanceProjection(point);
+                r2t[i] = EquidistanceProjection::aoi(r);
                 break;
             case 3:
-               iv = new EquisolidAngleProjection(point);
+                r2t[i] = EquisolidAngleProjection::aoi(r);
                 break;
         }
-        iv->calcM();
-        r2t[i] = iv->getTheta();
+        std::cout << IncidentVector::getProjection() << "\t" << r << "\t" << r2t[i] << std::endl;
     }
     
     int r_size = max_r * precision + 10;
@@ -117,8 +121,8 @@ void Reprojection::saveRadius2Theta(std::string filename)
 
 void Reprojection::calcMaps(double theta_x, double theta_y, double f_, cv::Mat& mapx, cv::Mat& mapy)
 {
-    mapx.create(img_size.height, img_size.width, CV_32FC1);
-    mapy.create(img_size.height, img_size.width, CV_32FC1);
+    mapx.create(IncidentVector::getImgSize().height, IncidentVector::getImgSize().width, CV_32FC1);
+    mapy.create(IncidentVector::getImgSize().height, IncidentVector::getImgSize().width, CV_32FC1);
     
     cv::Mat Rx = (cv::Mat_<double>(3,3) <<
                   1,            0,             0,
@@ -130,10 +134,10 @@ void Reprojection::calcMaps(double theta_x, double theta_y, double f_, cv::Mat& 
                   -sin(theta_y), 0, cos(theta_y));
     cv::Mat R = Ry * Rx;
     
-    for (int y_ = 0; y_ < img_size.height; ++y_) { // y
-        for (int x_ = 0; x_ < img_size.width; ++x_) { // x
+    for (int y_ = 0; y_ < IncidentVector::getImgSize().height; ++y_) { // y
+        for (int x_ = 0; x_ < IncidentVector::getImgSize().width; ++x_) { // x
             
-            cv::Point2d p2(x_ - img_size.width/2.0, y_ - img_size.height/2.0);
+            cv::Point2d p2(x_ - IncidentVector::getImgSize().width/2.0, y_ - IncidentVector::getImgSize().height/2.0);
             cv::Mat p3 = (cv::Mat_<double>(3,1) << p2.x, p2.y, f_);
             cv::Mat real = 1.0/sqrt(pow(p2.x,2) + pow(p2.y,2) + pow(f_,2)) * R * p3;
             
@@ -146,7 +150,7 @@ void Reprojection::calcMaps(double theta_x, double theta_y, double f_, cv::Mat& 
                 mapy.at<float>(y_,x_) = 0;
                 continue;
             }
-            cv::Point2d final = center + t2r[(int)(theta/rad_step)] / sqrt(1-pow(z,2)) * cv::Point2d(x,y);
+            cv::Point2d final = IncidentVector::getCenter() + t2r[(int)(theta/rad_step)] / sqrt(1-pow(z,2)) * cv::Point2d(x,y);
             //            cv::Point2d final = center + f * theta / sqrt(1-pow(z,2))  * cv::Point2d(x,y); // Perspective projection
             //            cv::Point2d final = center + 2*f*tan(theta/2) / sqrt(1-pow(z,2))  * cv::Point2d(x,y); // Stereo graphic projection
             

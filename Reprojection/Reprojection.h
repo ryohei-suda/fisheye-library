@@ -22,10 +22,6 @@
 class Reprojection {
 public:
     int precision = 100;
-    double f, f0;
-    cv::Point2d center;
-    cv::Size2i img_size;
-    std::vector<double> a;
     std::vector<double> t2r; // theta to radius
     std::vector<double> r2t;
     double rad_step;

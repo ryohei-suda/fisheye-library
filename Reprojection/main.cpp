@@ -33,11 +33,11 @@ int main(int argc, const char * argv[])
     reproj.loadPrameters(param);
     
     // Print parameters
-    std::cout << "f: " << reproj.f << "\nf0: " << reproj.f0 << std::endl;
-    std::cout << "center: " << reproj.center << std::endl;
-    std::cout << "image size: " << reproj.img_size << std::endl;
+    std::cout << "f: " << IncidentVector::getF() << "\nf0: " << IncidentVector::getF0() << std::endl;
+    std::cout << "center: " << IncidentVector::getCenter() << std::endl;
+    std::cout << "image size: " << IncidentVector::getImgSize() << std::endl;
     std::cout << "ai: ";
-    for (std::vector<double>::iterator it = reproj.a.begin(); it != reproj.a.end(); ++it) {
+    for (std::vector<double>::iterator it = IncidentVector::getA().begin(); it != IncidentVector::getA().end(); ++it) {
         std::cout << *it << '\t';
     }
     std::cout << std::endl;
