@@ -59,28 +59,35 @@ void Reprojection::theta2radius()
     int theta_size = round(max_r) * precision + 10; // If PRECISION = 10, r = {0, 0.1, 0.2, 0.3, ...}
     
     r2t.resize(theta_size);
+    cv::Point2d p(0,0);
+    IncidentVector *iv = nullptr;
+    std::cout << IncidentVector::getProjectionName()  << "\t" << IncidentVector::getProjection()<< std::endl;
+    switch (IncidentVector::getProjection()) {
+        case 0:
+            iv = new StereographicProjection(p);
+            std::cout << "Stereographic Projection" << std::endl;
+            break;
+        case 1:
+            iv = new OrthographicProjection(p);
+            std::cout << "Orthographic Projection" << std::endl;
+            break;
+        case 2:
+            iv = new EquidistanceProjection(p);
+            std::cout << "Equidistance Projection" << std::endl;
+            break;
+        case 3:
+            iv = new EquisolidAngleProjection(p);
+            std::cout << "Equisolid Angle Projection" << std::endl;
+            break;
+    }
     for (int i = 0; i < theta_size; ++i) {
         double r = (double)i / precision;
         
-        switch (IncidentVector::getProjection()) {
-            case 0:
-                r2t[i] = StereographicProjection::aoi(r);
-                break;
-            case 1:
-                r2t[i] = OrthographicProjection::aoi(r);
-                break;
-            case 2:
-                r2t[i] = EquidistanceProjection::aoi(r);
-                break;
-            case 3:
-                r2t[i] = EquisolidAngleProjection::aoi(r);
-                break;
-        }
-        std::cout << IncidentVector::getProjection() << "\t" << r << "\t" << r2t[i] << std::endl;
+        r2t[i] = iv->aoi(r);
     }
     
     int r_size = max_r * precision + 10;
-    r_size = 2000 * precision;
+//    r_size = 2000 * precision;
     t2r.resize(r_size);
     int j = 1; // j/PRECISION: radius
     rad_step = r2t[theta_size-1] / r_size; // 0 ~ theta[end] radian

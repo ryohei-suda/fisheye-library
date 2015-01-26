@@ -43,6 +43,7 @@ int main(int argc, const char * argv[])
     std::cout << std::endl;
     
     reproj.theta2radius();
+//    reproj.saveRadius2Theta("Stereographic.dat");
     
     std::string srcname;
     std::cout << "Type source image file name > ";
@@ -67,7 +68,6 @@ int main(int argc, const char * argv[])
     
     cv::Mat dst;
     cv::remap(src, dst, mapx, mapy, cv::INTER_LINEAR); // Rectify
-    
     cv::namedWindow("src", CV_GUI_NORMAL);
     cv::imshow("src", src);
     cv::moveWindow("src", 0, 0);
