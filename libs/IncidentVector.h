@@ -74,7 +74,7 @@ public:
     
     void calcDerivatives();
     void calcM();
-    static double aoi(double r); // Calculate theta
+    virtual double aoi(double r) = 0; // Calculate theta
 };
 
 

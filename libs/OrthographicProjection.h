@@ -21,6 +21,6 @@ private:
     
 public:
     OrthographicProjection(cv::Point2d p);
-    static double aoi(double r); // Calculate theta
+    double aoi(double r); // Calculate theta
 };
 #endif /* defined(__Calibration__OrthographicProjection__) */

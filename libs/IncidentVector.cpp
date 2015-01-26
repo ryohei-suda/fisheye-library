@@ -21,7 +21,6 @@ IncidentVector::IncidentVector(cv::Point2d p)
     point = p;
 }
 
-double IncidentVector::aoi(double r) { return -1; }
 
 void IncidentVector::setParameters(double f, double f0, std::vector<double> a, cv::Size2i img_size, cv::Point2d center)
 {

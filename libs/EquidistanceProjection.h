@@ -21,7 +21,7 @@ private:
     std::vector<cv::Point3d> calcDak();
     
 public:
-    static double aoi(double r); // Calculate theta
+    double aoi(double r); // Calculate theta
     EquidistanceProjection(cv::Point2d p);
 };
 
