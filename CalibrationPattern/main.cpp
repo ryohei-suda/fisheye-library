@@ -21,7 +21,7 @@ int main(int argc, const char * argv[])
     std::cout << "Type display width in pixel > ";
     std::cin >> width;
     
-    Pattern pattern(height, width, 75);
+    Pattern pattern(height, width, 75, 5);
     pattern.generate();
     
     std::string dir;

@@ -17,14 +17,16 @@ class Pattern
 
 private:
     int height, width, line_width;
+    int slope;
     cv::Mat patterns[4];
     
 public:
-    Pattern(int height, int width, int line_width);
-    void setParameters(int height, int width, int line_width);
+    Pattern(int height, int width, int line_width, int slope);
+    void setParameters(int height, int width, int line_width, int slope);
     void setHeight(int height);
     void setWidth(int width);
     void setLineWidth(int line_width);
+    void setSlope(int slope);
     void generate();
     void save(std::string dir);
 };
