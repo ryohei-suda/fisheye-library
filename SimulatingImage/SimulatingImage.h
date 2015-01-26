@@ -25,6 +25,7 @@ private:
     cv::Point3d units[2]; // Vectors of a pattern, 0: x, 1: y on 2D pattern
     cv::Point3d norm; // normal vector of a pattern
     double interval; // Interval of stripes
+    int model; //0: Stereographic, 1:Orthographic, 2:Equidistance, 3:EquisolidAngle
     
     // Motion parameters
     cv::Point3d pattern_center; // Center of a pattern
@@ -80,9 +81,10 @@ public:
     void setImgSize(int width, int height) { img_size.width = width; img_size.height = height; }
     void setFoVRadian(double fov) { this->fov = fov/2; }
     void setFoVDegree(double fov) { this->fov = d2r(fov/2);}
+    void setModel(int m) {this->model = m;}
     
     void calcCorners();
-    cv::Point3d getRay(cv::Point2d point, int model); // model is projection type, 0: Equidistance
+    cv::Point3d getRay(cv::Point2d point); // model is projection type, 0: Equidistance
     bool isCross(cv::Point3d ray); // Return true if ray crosses on a (infinite) plane
     cv::Point3d calcCrossPoint(cv::Point3d ray); // Return cross point of a plane and ray
     double calcS(cv::Point3d p);

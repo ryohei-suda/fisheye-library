@@ -49,17 +49,45 @@ void SimulatingImage::calcCorners() {
     norm *= (1./norm.ddot(norm));
 }
 
-cv::Point3d SimulatingImage::getRay(cv::Point2d point, int model) {
+cv::Point3d SimulatingImage::getRay(cv::Point2d point) {
     double theta;
     double r = sqrt(pow(point.x-optical_center.x, 2) + pow(point.y-optical_center.y, 2));
     switch (model) {
-        case 0: // Equidistance
+        case 0: //  Stereographic
+            theta = r/f0;
+            for (int i = 0; i < a.size(); ++i) {
+                theta += a.at(i) * pow(r/f0, 2*i+3);
+            }
+            theta *= f0 / (2*f);
+            theta = 2 * atan(theta);
+            break;
+            
+        case 1: // Orthographic
+            theta = r/f0;
+            for (int i = 0; i < a.size(); ++i) {
+                theta += a.at(i) * pow(r/f0, 2*i+3);
+            }
+            theta *= f0 / f;
+            theta = asin(theta);
+            break;
+            
+        case 2: // Equidistance
             theta = r/f0;
             for (int i = 0; i < a.size(); ++i) {
                 theta += a.at(i) * pow(r/f0, 2*i+3);
             }
             theta *= f0 / f;
             break;
+            
+        case 3: // EquisolidAngle
+            theta = r/f0;
+            for (int i = 0; i < a.size(); ++i) {
+                theta += a.at(i) * pow(r/f0, 2*i+3);
+            }
+            theta *= f0 / (2*f);
+            theta = 2 * asin(theta);
+            break;
+            
         default:
             theta = 0.;
             break;
@@ -120,7 +148,7 @@ cv::Mat SimulatingImage::projectPlane(int pattern) {
     
     for (int y = 0; y < img_size.height; ++y) {
         for (int x = 0; x < img_size.width; ++x) {
-            cv::Point3d ray = getRay(cv::Point2d(x,y), 0);
+            cv::Point3d ray = getRay(cv::Point2d(x,y));
             if (isCross(ray)) {
                 cv::Point3d p = calcCrossPoint(ray);
                 double s = calcS(p);
@@ -194,7 +222,7 @@ void onMouse(int event, int x, int y, int flag, void* data)
     SimulatingImage * si = (SimulatingImage *)(data);
     switch (event) {
         case CV_EVENT_LBUTTONDBLCLK:
-            cv::Point3d ray = si->getRay(cv::Point2d(x,y), 0);
+            cv::Point3d ray = si->getRay(cv::Point2d(x,y));
             cv::Point3d p = si->calcCrossPoint(ray);
             double s = si->calcS(p);
             double t = si->calcT(p);
@@ -281,6 +309,7 @@ void SimulatingImage::display() {
                 break;
             case 32: // space
                 std::cout << "Saved";
+                cv::imwrite("test.png",img);
                 for (int i = 1; i <= 4; ++i) {
                     img = projectPlane(i);
                     std::ostringstream sout;
