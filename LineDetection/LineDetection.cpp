@@ -375,22 +375,33 @@ std::vector<std::vector<cv::Point2i> > LineDetection::clusteringEdges(std::vecto
     while (!points.empty()) {
         std::vector<cv::Point2i> new_edge;
         std::vector<cv::Point2i>::iterator tmp;
-        new_edge.push_back(points[0]);
-        points.erase(points.begin());
-        int counter = 0;
-        for (std::vector<cv::Point2i>::iterator c = new_edge.begin(); c != new_edge.end(); c = tmp){ // Cluster
-            tmp = c + 1;
-            for (std::vector<cv::Point2i>::iterator p = points.begin(); p != points.end();) { // Points
-                if (c->x >= p->x-1 && c->x <= p->x+1 && c->y >= p->y-1 && c->y <= p->y+1) { // If a point is included in a cluster
+        new_edge.push_back(points[0]); // Push a point
+        points.erase(points.begin()); // Delete a point
+        for (int i = 0; i < new_edge.size(); ++i) {
+            cv::Point2i *n = &new_edge[i];
+            for (int j = 0; j < points.size(); ++j) {
+                cv::Point2i *p =&points[j];
+                if (n->x >= p->x-1 && n->x <= p->x+1 && n->y >= p->y-1 && n->y <= p->y+1) { // If a point is includ
                     new_edge.push_back(*p);
-                    tmp = new_edge.begin() + counter;
-                    p = points.erase(p);
-                } else {
-                    ++p;
+                    points.erase(points.begin()+j);
+                    j--;
                 }
             }
-            ++counter;
         }
+//        int counter = 0;
+//        for (std::vector<cv::Point2i>::iterator c = new_edge.begin(); c != new_edge.end(); c = tmp){ // Cluster
+//            tmp = c + 1;
+//            for (std::vector<cv::Point2i>::iterator p = points.begin(); p != points.end();) { // Points
+//                if (c->x >= p->x-1 && c->x <= p->x+1 && c->y >= p->y-1 && c->y <= p->y+1) { // If a point is included in a cluster
+//                    new_edge.push_back(*p);
+//                    tmp = new_edge.begin() + counter;
+//                    p = points.erase(p);
+//                } else {
+//                    ++p;
+//                }
+//            }
+//            ++counter;
+//        }
         edges.push_back(new_edge);
     }
     
