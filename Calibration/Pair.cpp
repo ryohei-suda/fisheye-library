@@ -170,7 +170,7 @@ void Pair::calcNcc()
                         std::cout << muk1 << std::endl;
                         std::cout << muk2 << std::endl;
                         std::cout << muk << std::endl;
-                        exit(-1);
+                        exit(99);
                     }
                 }
             }

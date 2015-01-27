@@ -12,7 +12,7 @@
 #include <opencv2/opencv.hpp>
 #include <cmath>
 #include <vector>
-#include "IncidentVector.h"
+#include "../libs/IncidentVector.h"
 // Pair of orthgonal edges
 
 class Pair

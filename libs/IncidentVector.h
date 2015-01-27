@@ -21,7 +21,8 @@ class IncidentVector
 protected:
     static double f; // Focal length (pixel unit)
     static double f0; // Scale constant
-    static std::vector<double> a; // Distortion parameters
+    static std::vector<double> a; // Distortion parameters (odd)
+    static std::vector<double> b; // Distortion parameters (even)
     static cv::Point2d center; // Optical center
     static cv::Size2i img_size; // Image size
     double theta;
@@ -60,6 +61,16 @@ public:
         IncidentVector::nparam = 3 + a_size;
     }
     static std::vector<double> getA() { return IncidentVector::a; }
+    static void setB(std::vector<double> b) {
+        IncidentVector::b = b;
+        IncidentVector::nparam = 3 + (int)a.size() + (int)b.size();
+    }
+    static void initB(int b_size) {
+        std::vector<double> b(b_size, 0);
+        IncidentVector::b = b;
+        IncidentVector::nparam = 3 + (int)a.size() + (int)b.size();
+    }
+    static std::vector<double> getB() { return IncidentVector::b; }
     static void setImgSize(cv::Size2i img_size) { IncidentVector::img_size = img_size; }
     static cv::Size2i getImgSize() { return IncidentVector::img_size; }
     static void setCenter(cv::Point2d c) { IncidentVector::center = c; }

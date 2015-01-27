@@ -10,6 +10,7 @@
 
 double IncidentVector::f, IncidentVector::f0;
 std::vector<double> IncidentVector::a;
+std::vector<double> IncidentVector::b;
 cv::Point2d IncidentVector::center;
 cv::Size2i IncidentVector::img_size;
 int IncidentVector::nparam = 3;

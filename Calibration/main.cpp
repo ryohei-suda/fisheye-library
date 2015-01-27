@@ -98,8 +98,10 @@ int main(int argc, const char * argv[])
 //        calib.calibrate(false);
 //    }
 
-    IncidentVector::initA(0);
-    calib.calibrate(false);
+//    IncidentVector::initA(0);
+//    calib.calibrate(false);
+//    IncidentVector::initA(1);
+//    calib.calibrate(false);
     IncidentVector::initA(a_size);
     calib.calibrate(false);
 //    calib.calibrate(true);

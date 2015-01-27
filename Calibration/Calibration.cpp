@@ -42,7 +42,7 @@ void Calibration::loadData(std::string filename) {
     
     std::stringstream ssdata;
     tinyxml2::XMLElement *pair = root->FirstChildElement("pair");
-    
+    std::cout << projection << "\t"  << IncidentVector::getProjection() << std::endl;
     while (pair != NULL) {
         Pair tmp;
         
@@ -94,7 +94,7 @@ void Calibration::loadData(std::string filename) {
                         edge.push_back(new StereographicProjection(point));
                         break;
                     case 1:
-                        //TODO add Perspective projection
+                        edge.push_back(new OrthographicProjection(point));
                         break;
                     case 2:
                         edge.push_back(new EquidistanceProjection(point));
@@ -153,12 +153,12 @@ void Calibration::calibrate(bool divide)
     if (divide) {
         gamma[0] = j1; gamma[1] = j2; gamma[2] = j3;
     } else {
-        gamma[0]= 0;
-        for (auto &pair : edges) {
-            gamma[0] += pair.edge[0].size() + pair.edge[1].size();
-        }
-        gamma[1] = edges.size();
-        gamma[2] = gamma[1]/2;
+//        gamma[0]= 0;
+//        for (auto &pair : edges) {
+//            gamma[0] += pair.edge[0].size() + pair.edge[1].size();
+//        }
+//        gamma[1] = edges.size();
+//        gamma[2] = gamma[1]/2;
         
         gamma[0] = gamma[1] = gamma[2] = 1;
     }
