@@ -44,7 +44,7 @@ public:
     void calibrate2(); // For new optimazation test
     
     
-    //大文字の後に付いてるcは微分を表している
+    // "c" means 1st or 2nd derivatives
     double J1(); // Colinearity
     double J1c(int);
     double J1cc(int, int);
