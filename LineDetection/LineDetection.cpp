@@ -172,10 +172,11 @@ void LineDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2i
         // Draw lines
         show = cv::Mat::zeros(size.height, size.width, CV_8UC3);
         int i = 0;
-        for (std::vector<std::vector<cv::Point2i> >::iterator line = edges.begin(); line != edges.end(); ++line, ++i) {
-            for (std::vector<cv::Point2i>::iterator point = line->begin(); point != line->end(); ++point) {
-                show.at<cv::Vec3b>(point->y, point->x) = color[i%30];
+        for (auto &line : edges) {
+            for (auto &point : line) {
+                show.at<cv::Vec3b>(point.y, point.x) = color[i%30];
             }
+            ++i;
         }
         //        image.copyTo(show);
         if(selection.status == 0) {
@@ -183,35 +184,33 @@ void LineDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2i
             cv::Mat over = cv::Mat::ones(selection.area.height, selection.area.width, CV_8UC3) * 127;
             show(selection.area) = cv::max(show(selection.area), over);
         } else if (selection.status == 2) {
-//            image(selection.area) = cv::Mat::zeros(selection.area.height, selection.area.width, CV_8UC1);
-            for (std::vector<std::vector<cv::Point2i> >::iterator line = edges.begin(); line != edges.end(); ) {
+            for (int i = 0; i < edges.size(); ++i) {
                 bool deleted = false;
-                for (std::vector<cv::Point2i>::iterator point = line->begin(); point != line->end(); ) {
+                std::vector<cv::Point2i> *line = &edges[i];
+                for (int j = 0; j < line->size(); ++j) {
+                    cv::Point2i *point = &line->at(j);
                     if (point->x >= selection.area.x && point->x <= selection.area.x+selection.area.width && point->y >= selection.area.y && point->y <= selection.area.y+selection.area.height) {
-                        point = line->erase(point);
+                        line->erase(line->begin()+j);
+                        --j;
                         deleted = true;
-                    } else {
-                        ++point;
                     }
                 }
                 if (deleted) {
                     std::vector<std::vector<cv::Point2i> > clustered = clusteringEdges(*line);
-                    for (std::vector<std::vector<cv::Point2i>>::iterator it = clustered.begin(); it != clustered.end();) {
-                        if (it->size() < min) { // Delete edges which have under 20 points
-                            it = clustered.erase(it);
-                        } else {
-                            ++it;
+                    for (int k = 0; k < clustered.size(); ++k) {
+                        if (clustered[k].size() < min) {
+                            clustered.erase(clustered.begin()+k);
+                            --k;
                         }
                     }
-                    if (clustered.size() == 0) {
-                        line = edges.erase(line);
-                    } else {
-                        *line = clustered[0];
-                        line = edges.insert(line, clustered.begin()+1, clustered.end());
-                    }
-                } else {
-                    ++line;
                     
+                    edges.erase(edges.begin()+i);
+                    if (clustered.size() != 0) {
+                        edges.insert(edges.begin()+i, clustered.begin(), clustered.end());
+                        i += clustered.size()-1;
+                    } else {
+                        --i;
+                    }
                 }
             }
             
@@ -222,11 +221,13 @@ void LineDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2i
             selection.status = 0;
             
         } else if (selection.status == 3) { // Remove one point
-            for (std::vector<std::vector<cv::Point2i> >::iterator line = edges.begin(); line != edges.end(); ) {
+            for (int i = 0; i < edges.size(); ++i) {
                 bool deleted = false;
-                for (std::vector<cv::Point2i>::iterator point = line->begin(); point != line->end(); ) {
+                std::vector<cv::Point2i> *line = &edges[i];
+                for (int j = 0; j < line->size(); ++j) {
+                    cv::Point2i *point = &line->at(j);
                     if (point->x == selection.area.x && point->y == selection.area.y) {
-                        point = line->erase(point);
+                        line->erase(line->begin()+j);
                         deleted = true;
                         break;
                     } else {
@@ -235,18 +236,16 @@ void LineDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2i
                 }
                 if (deleted) {
                     std::vector<std::vector<cv::Point2i> > clustered = clusteringEdges(*line);
-                    for (std::vector<std::vector<cv::Point2i> >::iterator it = clustered.begin(); it != clustered.end();) {
-                        if (it->size() < 20) { // Delete edges which have under 20 points
-                            it = clustered.erase(it);
-                        } else {
-                            ++it;
+                    for (int k = 0; k < clustered.size(); ++k) {
+                        if (clustered[k].size() < min) {
+                            clustered.erase(clustered.begin()+k);
+                            --k;
                         }
                     }
-                    if (clustered.size() == 0) {
-                        line = edges.erase(line);
-                    } else {
-                        *line = clustered[0];
-                        line = edges.insert(line, clustered.begin()+1, clustered.end());
+                    
+                    edges.erase(edges.begin()+i);
+                    if (clustered.size() != 0) {
+                        edges.insert(edges.begin()+i, clustered.begin(), clustered.end());
                     }
                     break;
                 }
