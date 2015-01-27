@@ -374,7 +374,7 @@ std::vector<std::vector<cv::Point2i> > LineDetection::clusteringEdges(std::vecto
     
     while (!points.empty()) {
         std::vector<cv::Point2i> new_edge;
-        std::vector<cv::Point2i>::iterator tmp;
+//        std::vector<cv::Point2i>::iterator tmp;
         new_edge.push_back(points[0]); // Push a point
         points.erase(points.begin()); // Delete a point
         for (int i = 0; i < new_edge.size(); ++i) {
@@ -413,19 +413,20 @@ std::vector<std::vector<cv::Point2i> > LineDetection::clusteringEdges(std::vecto
  */
 void LineDetection::processAllImages()
 {
-    std::vector<LineDetection::pair>::iterator pair = image_names.begin();
-    for (; pair != image_names.end(); ++pair) {
+//    std::vector<LineDetection::pair>::iterator pair = image_names.begin();
+    for (auto &pair : image_names) {
+//    for (; pair != image_names.end(); ++pair) {
         std::vector<std::vector<cv::Point2i> > edges[2];
         cv::Mat img[4];
         cv::Mat tmp;
-        switch (pair->type) {
+        switch (pair.type) {
             case Four:
                 for (int i = 0; i < 4; ++i) {
-                    std::cout << "Loading " << pair->filenames[i] << std::endl;
-                    img[i] = cv::imread(pair->filenames[i], CV_LOAD_IMAGE_GRAYSCALE);
+                    std::cout << "Loading " << pair.filenames[i] << std::endl;
+                    img[i] = cv::imread(pair.filenames[i], CV_LOAD_IMAGE_GRAYSCALE);
                     
                     if (img[i].empty()) {
-                        std::cerr << "Cannot open!" << pair->filenames[i] << std::endl;
+                        std::cerr << "Cannot open!" << pair.filenames[i] << std::endl;
                         exit(-1);
                     }
 //                    img[i].convertTo(tmp, CV_64F);
@@ -441,25 +442,25 @@ void LineDetection::processAllImages()
                 
             case Two:
                 for (int i = 0; i < 2; ++i) {
-                    std::cout << "Loading " << pair->filenames[i] << std::endl;
-                    img[i] = cv::imread(pair->filenames[i], CV_LOAD_IMAGE_GRAYSCALE);
+                    std::cout << "Loading " << pair.filenames[i] << std::endl;
+                    img[i] = cv::imread(pair.filenames[i], CV_LOAD_IMAGE_GRAYSCALE);
                     if (img[i].empty()) {
-                        std::cerr << "Cannot open!" << pair->filenames[i] << std::endl;
+                        std::cerr << "Cannot open!" << pair.filenames[i] << std::endl;
                         exit(-1);
                     }
                     cv::resize(img[i], img[i], cv::Size(), unit, unit, cv::INTER_CUBIC);
                     cv::Canny(img[i], img[i], 50, 200);
                     edges[i] = extractEdges(img[i]);
-                    display(cv::Size2i(img[i].cols, img[i].rows), edges[i], pair->filenames[i]);
+                    display(cv::Size2i(img[i].cols, img[i].rows), edges[i], pair.filenames[i]);
                 }
                 break;
                 
             case TwoBW:
                 for (int i = 0; i < 4; ++i) {
-                    std::cout << "Loading " << pair->filenames[i] << std::endl;
-                    img[i] = cv::imread(pair->filenames[i], CV_LOAD_IMAGE_GRAYSCALE);
+                    std::cout << "Loading " << pair.filenames[i] << std::endl;
+                    img[i] = cv::imread(pair.filenames[i], CV_LOAD_IMAGE_GRAYSCALE);
                     if (img[i].empty()) {
-                        std::cerr << "Cannot open!" << pair->filenames[i] << std::endl;
+                        std::cerr << "Cannot open!" << pair.filenames[i] << std::endl;
                         exit(-1);
                     }
                     cv::resize(img[i], img[i], cv::Size(), unit, unit, cv::INTER_CUBIC);
@@ -468,7 +469,7 @@ void LineDetection::processAllImages()
                 for (int i = 0; i < 2; ++i) {
                     cv::Mat edge = detectEdges(img[0], mask);
                     edges[i] = extractEdges(edge);
-                    display(cv::Size2i(edge.cols, edge.rows), edges[i], pair->filenames[i]);
+                    display(cv::Size2i(edge.cols, edge.rows), edges[i], pair.filenames[i]);
                 }
                 break;
         }
