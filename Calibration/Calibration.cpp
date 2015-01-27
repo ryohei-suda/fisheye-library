@@ -319,8 +319,6 @@ void Calibration::calibrate2()
             double f = IncidentVector::getF();
             std::vector<double> a = IncidentVector::getA();
             
-            //    ( 2 ) 式(3) によって入射角θκα を計算し，式(6) によって入射光ベクトルmκα を計算し，
-            //    式(7), (10), (13) によって∂mκα/∂c を計算する(c = u0, v0, f, a1, a2, ...)．
             for (auto &pair : edges) {
                 pair.calcM();
                 pair.calcNormal();
@@ -328,7 +326,6 @@ void Calibration::calibrate2()
                 pair.calcDerivatives();
             }
             
-            //    ( 3 ) それらを用いてJ のパラメータに関する1 階微分Jc，2 階微分Jcc0 を計算する
             cv::Mat left(IncidentVector::nparam, IncidentVector::nparam, CV_64F);
             cv::Mat right(IncidentVector::nparam, 1, CV_64F);
             
@@ -347,13 +344,10 @@ void Calibration::calibrate2()
                 for (int i = 0; i < IncidentVector::nparam; ++i) {
                     cmat.at<double>(i,i) = 1+C;
                 }
-                //    ( 4 ) 次の連立1次方程式を解いてΔu0, Δv0, Δf, Δa1, ... を計算する．
                 cv::solve(left.mul(cmat), -right, delta);
 //                std::cout << "------------------------ Iteration "<< iterations << " -------------------------" << std::endl;
 //                std::cout << "Delta: " << delta << std::endl;
                 
-                //    ( 5 ) 次のように˜u0, ˜v0, ˜ f, ˜a1, a2, ... を計算し，それに対するJ の値を˜ J とする．
-                //    ˜u0 = u0+Δu0, ˜v = v0+Δv0, ˜ f = f+Δf, ˜a1 = a1+Δa1, ˜a2 = a2+Δa2, ... (48)
                 cv::Point2d center_(center.x + delta.at<double>(0), center.y + delta.at<double>(1));
                 double f_ = f + delta.at<double>(2);
                 std::vector<double> a_;
@@ -374,8 +368,6 @@ void Calibration::calibrate2()
                 J_ = (this->*J[t])();
 //                std::cout << "C: " << C << "\tJ0: " << J0 << "\tJ_: " << J_ << std::endl;
                 
-                
-                //    ( 6 ) ˜ J < J0 なら次へ進む．そうでなければC Ã 10C としてステップ(4) に戻る．
                 if ( J_  <= J0) {
                     std::cout << "------------------------ Iteration "<< iterations << " -------------------------" << std::endl;
                     std::cout << "Delta: " << delta << std::endl;
@@ -392,9 +384,6 @@ void Calibration::calibrate2()
                 }
             }
             
-            //    ( 7 ) u0 Ã ˜u0, v0 Ã ˜v0, f Ã ˜ f, a1 Ã ˜a1, a2 Ã ˜a2, ... とし，jΔu0j < ²0, jΔv0j < ²0,
-            //    jΔfj < ²f , jΔa1j < ²1, jΔa2j < ²2, ... ならu0, v0, f, a1, a2, ..., J を返して終了す
-            //    る．そうでなければJ0 Ã J, C Ã C/10 としてステップ(2) に戻る
             bool converged = true;
             double epsilon = 1.0e-5;
             if (delta.at<double>(0) / center.x > epsilon ||
