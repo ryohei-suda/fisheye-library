@@ -1,30 +1,26 @@
-fisheye-library
+Fisheye Camera Software (Version 0.0.1)
 ===============
+This project is to distribute software fish-eye cameras. The main purpose of this software is to estimate camera intrinsic parameters, such as an optical center, a focal length, and distortion coefficients.
 
-This project is to distribute libraries regarding to fish-eye lens camera.
+If you have questions, bug reports, or comments, please contact me by the following URL.
+https://groups.google.com/forum/?hl=ja#!forum/fisheye-camera-software
 
-<<<<<<< HEAD
-Libraries are divided into 4 parts:
-=======
-Libraries are divided into 4 parts.
->>>>>>> working
+This software consits of 4 parts:
+  CalibrationPattern,
+  LineDetection,
   Calibration,
-  CornerDetection,
-  CalibrationPattern, and
   Reprojection
   
-Calibration
-----------
-
-CornerDetection
-----------
-
 CalibrationPattern
+----------
+
+LineDetection
+----------
+
+Calibration
 ----------
 
 Reprojection
 ----------
 
-
-
-All rights are reserved by Ryohei Suda (2014)
+All rights are reserved by Ryohei Suda (2015)
