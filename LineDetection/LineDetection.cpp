@@ -8,6 +8,7 @@
 
 #include "LineDetection.h"
 
+int LineDetection::unit = 1;
 
 /*
  * Constructor
@@ -547,6 +548,7 @@ std::vector<std::vector<cv::Point2i> > LineDetection::detectLines(cv::Mat &img1,
     }
     cv::Mat diff = img1-img2;
     cv::Mat cross = cv::Mat::zeros(diff.rows, diff.cols, CV_8UC1);
+    cv::Mat cross_inv = cv::Mat::zeros(diff.rows, diff.cols, CV_8UC1);
     double thresh = 20;
     bool positive; // Whether previous found cross point was positive
     bool search; // Whether serching
@@ -612,6 +614,66 @@ std::vector<std::vector<cv::Point2i> > LineDetection::detectLines(cv::Mat &img1,
             val_prev = val_now;
         }
     }
+    
+//    // search for inversed x direction
+//    for (int y = 0; y < diff.rows; y++) {
+//        val_prev = diff.at<double>(y,diff.cols-1);
+//        positive = (val_prev > 0);
+//        search = false;
+//        found_first = false;
+//        for (int x = diff.cols-2; x > 0; --x) {
+//            val_now = diff.at<double>(y, x);
+//            if (search && (
+//                           ((val_now <= 0) && positive) || ((val_now >= 0) && !positive))) {// found crossed point
+//                if (abs(val_now) < abs(val_prev)) {
+//                    cross_inv.at<uchar>(y,x) = 255;
+//                } else {
+//                    cross_inv.at<uchar>(y,x+1) = 255;
+//                }
+//                positive = !positive;
+//                search = false;
+//            }
+//            if (!search && abs(val_now) > thresh) {
+//                search = true;
+//                if (!found_first) {
+//                    found_first = true;
+//                    positive = (val_now > 0);
+//                }
+//            }
+//            val_prev = val_now;
+//        }
+//    }
+//    
+//    // search for inversed y direction
+//    for (int x = 0; x < diff.cols; x++) {
+//        val_prev = diff.at<double>(diff.rows-1,x);
+//        positive = (val_prev > 0);
+//        search = false;
+//        found_first = false;
+//        for (int y = diff.rows-2; y > 0; --y) {
+//            val_now = diff.at<double>(y,x);
+//            if (search && (
+//                           ((val_now <= 0) && positive) || ((val_now >= 0) && !positive))) {// found crossed point
+//                if (abs(val_now) < abs(val_prev)) {
+//                    if (cross_inv.at<uchar>(y,x) != 255) {
+//                        cross_inv.at<uchar>(y,x) = 255;
+//                    }
+//                } else {
+//                    cross_inv.at<uchar>(y+1,x) = 255;
+//                }
+//                positive = !positive;
+//                search = false;
+//            }
+//            if (!search && abs(val_now) > thresh) {
+//                search = true;
+//                if (!found_first) {
+//                    found_first = true;
+//                    positive = (val_now > 0);
+//                }
+//            }
+//            val_prev = val_now;
+//        }
+//    }
     
     lines = extractEdges(cross);
     

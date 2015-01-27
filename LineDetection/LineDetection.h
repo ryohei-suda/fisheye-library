@@ -24,7 +24,7 @@ private:
     cv::Size2i img_size;
     std::string projection;
     tinyxml2::XMLDocument output;
-    int unit = 0.5; // 1/unit = 0.1 pixel when unit = 10
+    static int unit; // 1/unit = 0.1 pixel when unit = 10
     
     typedef struct { // For the display function
         cv::Rect area;
