@@ -383,6 +383,7 @@ std::vector<std::vector<cv::Point2i> > LineDetection::clusteringEdges(std::vecto
                 cv::Point2i *p =&points[j];
                 if (n->x >= p->x-1 && n->x <= p->x+1 && n->y >= p->y-1 && n->y <= p->y+1) { // If a point is includ
                     new_edge.push_back(*p);
+                    n = &new_edge[i];
                     points.erase(points.begin()+j);
                     j--;
                 }
