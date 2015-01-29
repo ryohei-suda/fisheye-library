@@ -251,18 +251,20 @@ void Calibration::calibrate(bool divide)
         // Judge wether converged
         bool converged = true;
         double epsilon = 1.0e-5;
-        if (delta.at<double>(0) / center.x > epsilon ||
-            delta.at<double>(1) / center.y > epsilon ||
-            delta.at<double>(2) / f > epsilon) {
+        if (fabs(delta.at<double>(0) / center.x) > epsilon ||
+            fabs(delta.at<double>(1) / center.y) > epsilon ||
+            fabs(delta.at<double>(2) / f) > epsilon) {
             converged = false;
         }
         for (int i = 3; i < IncidentVector::nparam && converged; ++i) {
             if (fabs(delta.at<double>(i)) /  a.at(i-3) > epsilon) {
                 converged = false;
+                break;
             }
         }
         
-        if (converged || J_ == J0) {
+        if (converged) {
+            std::cout << "converged" << std::endl;
             break;
             
         } else {

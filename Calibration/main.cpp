@@ -19,17 +19,24 @@
 int main(int argc, const char * argv[])
 {
     Calibration calib;
-    
-//    std::string filename(argv[1]);
-    
     std::string filename;
-    std::cout << "Type filename > ";
-    std::cin >> filename;
+    int a_size;
+    std::string outname;
+    
+    if (argc > 0) { // From command line
+        filename = std::string(argv[1]);
+        a_size = atoi(argv[2]);
+        outname = std::string(argv[3]);
+        std::cout << filename << "\t" << a_size << "\t" << outname << std::endl;
+    } else {
+        std::cout << "Type filename > ";
+        std::cin >> filename;
+        std::cout << "Type correction degree > ";
+        std::cin >> a_size;
+    }
+    
     calib.loadData(filename);
 //    int a_size = atoi(argv[5]);
-    int a_size;
-    std::cout << "Type correction degree > ";
-    std::cin >> a_size;
     IncidentVector::initA(a_size);
 //    std::vector<double> a;
 //    a.push_back(5e-3); a.push_back( 6e-4); a.push_back( 7e-5); a.push_back( 8e-6); a.push_back( 9e-7);
@@ -107,9 +114,10 @@ int main(int argc, const char * argv[])
 //    calib.calibrate(true);
 //    calib.calibrate2();
     
-    std::string outname;
-    std::cout << "Type output filename > ";
-    std::cin >> outname;
+    if (argc == 0) {
+        std::cout << "Type output filename > ";
+        std::cin >> outname;
+    }
 //    std::string outname(argv[6]);
     calib.save(outname);
     
