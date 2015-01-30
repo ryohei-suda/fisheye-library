@@ -23,7 +23,7 @@ int main(int argc, const char * argv[])
     int a_size;
     std::string outname;
     
-    if (argc > 0) { // From command line
+    if (argc == 4) { // From command line
         filename = std::string(argv[1]);
         a_size = atoi(argv[2]);
         outname = std::string(argv[3]);
@@ -104,22 +104,23 @@ int main(int argc, const char * argv[])
 //    } else {
 //        calib.calibrate(false);
 //    }
-
-//    IncidentVector::initA(0);
-//    calib.calibrate(false);
-//    IncidentVector::initA(1);
-//    calib.calibrate(false);
-    IncidentVector::initA(a_size);
-    calib.calibrate(false);
-//    calib.calibrate(true);
-//    calib.calibrate2();
     
-    if (argc == 0) {
+    
+    if (argc != 4) {
         std::cout << "Type output filename > ";
         std::cin >> outname;
     }
-//    std::string outname(argv[6]);
-    calib.save(outname);
+
+//    IncidentVector::initA(0);
+//    calib.calibrate(false);
+    calib.calibrate(true);
+//    IncidentVector::initA(a_size);
+//    calib.calibrate(false);
+    calib.save(std::string("1")+outname);
+    calib.calibrate(true);
+    calib.save(std::string("2")+outname);
+//    calib.calibrate2();
+    
     
 //    calib.calibrate(true);
 //    calib.save(std::string("d_")+outname);

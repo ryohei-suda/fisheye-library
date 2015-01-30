@@ -144,7 +144,9 @@ void Calibration::calibrate(bool divide)
         pair.calcM();
         pair.calcNormal();
         pair.calcLine();
+        pair.calcVertical(pair.lineVector[0],pair.normalVector[1]);
     }
+    std::cin >> J0;
     
     double j1 = J1(), j2 = J2(), j3 = J3();
     double gamma[3];
@@ -198,13 +200,14 @@ void Calibration::calibrate(bool divide)
         double J_;
         while (true) {
             ++iterations;
+            std::cout << "------------------------ Iteration "<< iterations << " -------------------------" << std::endl;
+//            std::cout << left << right << std::endl;
             cv::Mat cmat = cv::Mat::ones(IncidentVector::nparam, IncidentVector::nparam, CV_64F); // To calculate (1+C)
             for (int i = 0; i < IncidentVector::nparam; ++i) {
                 cmat.at<double>(i,i) = 1+C;
             }
             // Calculate delta by solving the simultaneous equation
             cv::solve(left.mul(cmat), -right, delta);
-            std::cout << "------------------------ Iteration "<< iterations << " -------------------------" << std::endl;
             std::cout << "Delta: " << delta << std::endl;
             
             // Update parameters by adding delta and calculate coressponding J
@@ -386,16 +389,18 @@ void Calibration::calibrate2()
                 }
             }
             
+            // Judge wether converged
             bool converged = true;
             double epsilon = 1.0e-5;
-            if (delta.at<double>(0) / center.x > epsilon ||
-                delta.at<double>(1) / center.y > epsilon ||
-                delta.at<double>(2) / f > epsilon) {
+            if (fabs(delta.at<double>(0) / center.x) > epsilon ||
+                fabs(delta.at<double>(1) / center.y) > epsilon ||
+                fabs(delta.at<double>(2) / f) > epsilon) {
                 converged = false;
             }
             for (int i = 3; i < IncidentVector::nparam && converged; ++i) {
-                if (fabs(delta.at<double>(i)) /  a.at(i) > epsilon) {
+                if (fabs(delta.at<double>(i)) /  a.at(i-3) > epsilon) {
                     converged = false;
+                    break;
                 }
             }
             
@@ -406,6 +411,9 @@ void Calibration::calibrate2()
                 J0 = J_;
                 C /= 10.0;
             }
+        }
+        if (t == 0) {
+            t = 3;
         }
     }
     }
