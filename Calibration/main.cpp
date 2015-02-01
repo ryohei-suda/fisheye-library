@@ -44,9 +44,9 @@ int main(int argc, const char * argv[])
 //    IncidentVector::setA(a);
 //    int x = atoi(argv[2]), y = atoi(argv[3]), f = atoi(argv[4]);
 //    double x = 953., y = 600., f = 401.;
-//    IncidentVector::setF(f);
-//    IncidentVector::setCenter(cv::Point2d(793,606));
-//    IncidentVector::setF0((int)f);
+//    IncidentVector::setF(400);
+//    IncidentVector::setCenter(cv::Point2d(805,597));
+//    IncidentVector::setF0(400);
     
     std::cout << "Projection Model:\t" << IncidentVector::getProjectionName() << std::endl;
     std::cout << "Center:\t" << IncidentVector::getCenter() << std::endl;
@@ -111,15 +111,19 @@ int main(int argc, const char * argv[])
         std::cin >> outname;
     }
 
-//    IncidentVector::initA(0);
+    IncidentVector::initA(0);
+    calib.calibrate(false);
+        calib.save(std::string("1")+outname);
 //    calib.calibrate(false);
+    IncidentVector::initA(a_size);
     calib.calibrate(true);
-//    IncidentVector::initA(a_size);
-//    calib.calibrate(false);
-    calib.save(std::string("1")+outname);
-    calib.calibrate(true);
-    calib.save(std::string("2")+outname);
+        calib.save(std::string("2")+outname);
+//    calib.save(std::string("1")+outname);
+//    calib.calibrate(true);
+//    calib.save(std::string("2")+outname);
 //    calib.calibrate2();
+    
+//    calib.calibrateNew();
     
     
 //    calib.calibrate(true);

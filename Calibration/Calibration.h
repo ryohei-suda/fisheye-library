@@ -55,6 +55,12 @@ public:
     double J3(); // Orthogonality
     double J3c(int);
     double J3cc(int, int);
+    
+    // For new optimization
+    double F();
+    double Fc(int c);
+    double Fcc(int c1, int c2);
+    void calibrateNew();
 };
 
 #endif /* defined(__Calibration__Calibration__) */

@@ -78,7 +78,6 @@ public:
     // n_k and l_g
     void calcNormal();
     void calcLine();
-    void calcVertical(cv::Mat &d, std::vector<cv::Mat> &e);
     
     // Derivatives
     void calcMd(); // Calculate all derivatives of points
@@ -88,6 +87,13 @@ public:
     void calcNcc();
     void calcLc();
     void calcDerivatives();
+    
+    // For new optimization
+    static cv::Mat calcVertical(cv::Mat &d, std::vector<cv::Mat> &e);
+    double calcF();
+    std::vector<cv::Mat> w[2];
+    
+    
 };
 
 

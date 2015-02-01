@@ -67,35 +67,84 @@ void Pair::calcLine()
     }
 }
 
-void Pair::calcVertical(cv::Mat &d, std::vector<cv::Mat> &e)
+double Pair::calcF()
 {
-    cv::Mat h = d.row(2).t();
+    
+    cv::Mat h = lineVector[0].row(2).t();
+    std::vector<cv::Mat> ns;
+    for (auto &n : normalVector[1]) {
+        ns.push_back(n.row(2).t());
+    }
+    std::cout << "--------------" << std::endl;
+    cv::Mat v = calcVertical(h, ns);
+//    std::cout << h << v << lineVector[1].row(2).t() << std::endl;
+    std::cout << acos(v.dot(lineVector[1].row(2).t()))*180/M_PI << std::endl;
+    std::cout << acos(h.dot(lineVector[1].row(2).t()))*180/M_PI << std::endl;
+    double error = 0;
+    
+//    exit(86);
+    
+    w[0].clear();
+    for (int i = 0; i < normalVector[0].size(); ++i ) { // First line pair
+        std::vector<cv::Mat> ps;
+        for (auto &n : edge[0][i]) {
+            ps.push_back( cv::Mat(n->m) );
+        }
+        cv::Mat wn = calcVertical(h, ps);
+        w[0].push_back(wn);
+        
+        for (auto &p : ps) { // Calculate error
+            cv::Mat e = wn.t() * p;
+            error += pow(e.at<double>(0), 2);
+        }
+    }
+    
+    w[1].clear();
+    for (int i = 0; i < normalVector[1].size(); ++i ) { // Second line pair
+        std::vector<cv::Mat> ps;
+        for (auto &n : edge[1][i]) {
+            ps.push_back( cv::Mat(n->m) );
+        }
+        cv::Mat wn = calcVertical(v, ps);
+        w[1].push_back(wn);
+        
+        for (auto &p : ps) { // Calculate error
+            cv::Mat e = wn.t() * p;
+            error += pow(e.at<double>(0), 2);
+        }
+    }
+    
+    return error;
+}
+
+cv::Mat Pair::calcVertical(cv::Mat &d, std::vector<cv::Mat> &e)
+{
+    cv::Mat h = d.clone();
     cv::Mat b = cv::Mat::zeros(3, 1, CV_64FC1);
     b.at<double>(0) = - h.at<double>(2);
     b.at<double>(2) = h.at<double>(0);
-    b *= 1.0 / sqrt( pow(b.at<double>(0),2) + pow(b.at<double>(2), 2));
+    b *= 1.0 / sqrt(b.dot(b));
     cv::Mat g = b.cross(h);
+    g *= 1.0 / sqrt(g.dot(g));
+//    std::cout << b << "\t" << g << std::endl;
     
     cv::Mat k = cv::Mat::zeros(3, 3, CV_64FC1);
-    for (int i = 0; i < e.size(); ++i) {
-        cv::Mat n = e.at(i).row(2);
-        k += n.t() * n;
+    for (auto &n : e) {
+        k += n * n.t();
     }
     
-    cv::Mat c1 = 2 * b.t() * k * g;
+    cv::Mat c1 = 2 * b.t() * k * g;//b.t() * k * g + g.t() * k * b;
     cv::Mat c2 = b.t() * k * b - g.t() * k * g;
     double c1d = c1.at<double>(0), c2d = c2.at<double>(0);
     cv::Mat v = c1d * b + (c2d-sqrt(c1d*c1d+c2d*c2d)) * g;
-    v *= 1.0 / sqrt(pow(v.at<double>(0),2) + pow(v.at<double>(1),2) + pow(v.at<double>(2), 2));
+    v *= 1.0 / sqrt(v.dot(v));
     
-//    std::cout << h << v << std::endl;
-//    std::cout << h.t()*v << std::endl;
-//    for (int i = 0; i < e.size(); ++i) {
-//        cv::Mat n = e.at(i).row(2);
-//        cv::Mat tmp = n * v;
-//        std::cout << n << "\t" << acos(tmp.at<double>(0)) * 180 / M_PI<< "\n"; //tmp
-//    }
-//    std::cout << std::endl;
+//    std::cout << v.t() << std::endl;
+    
+//    v = sqrt(1.0/2.0 * (1+c2d/sqrt(c1d*c1d+c2d*c2d))) * b + sqrt(1.0/2.0 * (1-c2d/sqrt(c1d*c1d+c2d*c2d))) * g;
+//    v *= 1.0 /sqrt(v.dot(v));
+    
+    return v;
 }
 
 void Pair::calcMc()
