@@ -46,18 +46,18 @@ public:
     LineDetection();
     void loadImageXML(std::string filename);
     cv::Mat makeMask(cv::Mat& white, cv::Mat& black);
-    void display(cv::Size2i size, std::vector<std::vector<cv::Point2i> >& edges, std::string name);
+    void display(cv::Size2i size, std::vector<std::vector<cv::Point2f> >& edges, std::string name);
     cv::Mat detectEdges(cv::Mat& image, cv::Mat& mask);
-    std::vector<std::vector<cv::Point2i> > extractEdges(cv::Mat& image);
-    std::vector<std::vector<cv::Point2i> > clusteringEdges(std::vector<cv::Point2i> points);
+    std::vector<std::vector<cv::Point2f> > extractEdges(cv::Mat& image);
+    std::vector<std::vector<cv::Point2f> > clusteringEdges(std::vector<cv::Point2f> points, float r);
     void processAllImages();
     void saveParameters(); // Save parameters into XML output
-    void saveTwoSetOfLines(std::vector<std::vector<cv::Point2i> >& first, std::vector<std::vector<cv::Point2i> >& second);
+    void saveTwoSetOfLines(std::vector<std::vector<cv::Point2f> >& first, std::vector<std::vector<cv::Point2f> >& second);
     void writeXML(std::string filename);
-    std::vector<std::vector<cv::Point2i> > detectValley(cv::Mat &img1, cv::Mat &img2);
-    std::vector<std::vector<cv::Point2i> > detectLines(cv::Mat &img1, cv::Mat &img2);
-    std::vector<std::vector<std::vector<cv::Point2i> > > loadEdgeXML(std::string filename);
-    void editAllEdges(std::vector<std::vector<std::vector<cv::Point2i> > > edges);
+    std::vector<std::vector<cv::Point2f> > detectValley(cv::Mat &img1, cv::Mat &img2);
+    std::vector<std::vector<cv::Point2f> > detectLines(cv::Mat &img1, cv::Mat &img2);
+    std::vector<std::vector<std::vector<cv::Point2f> > > loadEdgeXML(std::string filename);
+    void editAllEdges(std::vector<std::vector<std::vector<cv::Point2f> > > edges);
 };
 
 #endif
