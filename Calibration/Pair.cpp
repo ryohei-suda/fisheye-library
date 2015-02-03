@@ -78,11 +78,11 @@ double Pair::calcF()
     std::cout << "--------------" << std::endl;
     cv::Mat v = calcVertical(h, ns);
 //    std::cout << h << v << lineVector[1].row(2).t() << std::endl;
-    std::cout << acos(v.dot(lineVector[1].row(2).t()))*180/M_PI << std::endl;
-    std::cout << acos(h.dot(lineVector[1].row(2).t()))*180/M_PI << std::endl;
+//    std::cout << v << std::endl;
+//    std::cout << acos(v.dot(lineVector[1].row(2).t()))*180/M_PI << std::endl;
+//    std::cout << acos(h.dot(lineVector[1].row(2).t()))*180/M_PI << std::endl;
     double error = 0;
     
-//    exit(86);
     
     w[0].clear();
     for (int i = 0; i < normalVector[0].size(); ++i ) { // First line pair
@@ -117,8 +117,9 @@ double Pair::calcF()
     return error;
 }
 
-cv::Mat Pair::calcVertical(cv::Mat &d, std::vector<cv::Mat> &e)
+cv::Mat Pair::calcVertical(cv::Mat &d, std::vector<cv::Mat> &n)
 {
+    /*
     cv::Mat h = d.clone();
     cv::Mat b = cv::Mat::zeros(3, 1, CV_64FC1);
     b.at<double>(0) = - h.at<double>(2);
@@ -143,6 +144,38 @@ cv::Mat Pair::calcVertical(cv::Mat &d, std::vector<cv::Mat> &e)
     
 //    v = sqrt(1.0/2.0 * (1+c2d/sqrt(c1d*c1d+c2d*c2d))) * b + sqrt(1.0/2.0 * (1-c2d/sqrt(c1d*c1d+c2d*c2d))) * g;
 //    v *= 1.0 /sqrt(v.dot(v));
+    
+    return v;
+    */
+    
+    cv::Mat b = cv::Mat::zeros(3,1, CV_64FC1);
+    b.at<double>(0) = -d.at<double>(2);
+    b.at<double>(2) = d.at<double>(0);
+    b *= 1.0 / sqrt(b.dot(b)); // Make an unit vector
+    cv::Mat g = b.cross(d);
+    g *= 1.0 / sqrt(g.dot(g));// Make an unit vector
+    
+    cv::Mat k = cv::Mat::zeros(3, 3, CV_64FC1);
+    for (auto &ni : n) {
+        k += ni * ni.t();
+    }
+    
+    double c1 = (g.t() * k).dot(b.t()) + (b.t() * k).dot(g.t());
+    double c2 = (b.t() * k).dot(b.t()) - (g.t() * k).dot(g.t());
+//    c1 = 2 * (b.t() * k).dot(g.t());
+//    c2 = (b.t() * k).dot(b.t()) - (g.t() * k).dot(g.t());
+    
+    double part = c2 / (2 * sqrt(c1*c1+c2*c2));
+    double s = sqrt(0.5 - part); // sin
+    double c = sqrt(0.5 + part); // cos
+    
+    cv::Mat v;
+    if (c1 > 0) { // 2phi in the 1st or 2nd quadrant -> the first quadrant
+        v = -s*b + c*g;
+    } else { // 2phi in the second quadrant -> the first quadrant
+        v = s*b + c*g;
+    }
+//    v = c1 * b + (c2-sqrt(c1*c1+c2*c2)) *g;
     
     return v;
 }

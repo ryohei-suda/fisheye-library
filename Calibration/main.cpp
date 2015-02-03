@@ -27,13 +27,16 @@ int main(int argc, const char * argv[])
         filename = std::string(argv[1]);
         a_size = atoi(argv[2]);
         outname = std::string(argv[3]);
-        std::cout << filename << "\t" << a_size << "\t" << outname << std::endl;
+        std::cout << filename << " " << a_size << " " << outname << std::endl;
     } else {
         std::cout << "Type filename > ";
         std::cin >> filename;
         std::cout << "Type correction degree > ";
         std::cin >> a_size;
+        std::cout << "Type output filename > ";
+        std::cin >> outname;
     }
+    
     
     calib.loadData(filename);
 //    int a_size = atoi(argv[5]);
@@ -89,6 +92,8 @@ int main(int argc, const char * argv[])
 //                    img.at<cv::Vec3b>(int(point->point.y), int(point->point.x)) = color[j%30];
 //                }
 //            }
+//            cv::imshow("lines", img);
+//            cv::waitKey();
 //        }
 //        cv::imshow("lines", img);
 //        cv::waitKey();
@@ -106,24 +111,18 @@ int main(int argc, const char * argv[])
 //    }
     
     
-    if (argc != 4) {
-        std::cout << "Type output filename > ";
-        std::cin >> outname;
-    }
 
-    IncidentVector::initA(0);
-    calib.calibrate(false);
-        calib.save(std::string("1")+outname);
-//    calib.calibrate(false);
-    IncidentVector::initA(a_size);
-    calib.calibrate(true);
-        calib.save(std::string("2")+outname);
-//    calib.save(std::string("1")+outname);
+//    IncidentVector::initA(0);
 //    calib.calibrate(true);
-//    calib.save(std::string("2")+outname);
+//    calib.save(outname.insert(outname.size()-3, "1."));
+    
+//    IncidentVector::initA(a_size);
+//    calib.calibrate(true);
+//    outname.at(outname.size()-5) = '2';
+//    calib.save(outname);
 //    calib.calibrate2();
     
-//    calib.calibrateNew();
+    calib.calibrateNew();
     
     
 //    calib.calibrate(true);

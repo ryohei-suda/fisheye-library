@@ -132,6 +132,11 @@ void Calibration::save(std::string filename)
     }
     fs_out << "]";
     
+    fs_out << "J1" <<  J1();
+    fs_out << "J2" << J2();
+    fs_out << "J3" << J3();
+    
+    
 }
 
 void Calibration::calibrate(bool divide)
@@ -145,6 +150,54 @@ void Calibration::calibrate(bool divide)
         pair.calcNormal();
         pair.calcLine();
     }
+    
+//    int count = 0;
+//    for (auto &pair : edges) { // Write to point cloud data file
+//        std::vector<cv::Point3d> points;
+//        for (int j = 0; j < 2; ++j) {
+//            for (auto n : pair.normalVector[j]) {
+//                cv::Point3d n_(n.row(2));
+//                for (double i = 0.0; i <= 1; i+=0.01) {
+//                    points.push_back(n_*i);
+//                }
+//            }
+//            
+//            cv::Mat l = pair.lineVector[j].row(2);
+//            for (double i = 0.0; i <= 1; i+=0.01){
+//                points.push_back(cv::Point3d(l)*i);
+//            }
+//            
+//            for (auto &line : pair.edge[j]) {
+//                for (auto &point : line) {
+//                    cv::Point3d m  = point->m;
+//                    points.push_back(m);
+//                }
+//            }
+//        }
+//        
+//        
+//        std::ofstream ofs(std::to_string(count) + ".pcd");
+//        ofs << "VERSION .7" << std::endl;
+//        ofs << "FIELDS x y z" << std::endl;
+//        ofs << "SIZE 4 4 4" << std::endl;
+//        ofs << "TYPE F F F" << std::endl;
+//        ofs << "COUNT 1 1 1" << std::endl;
+//        ofs << "WIDTH " << points.size() << std::endl;
+//        ofs << "HEIGHT 1" << std::endl;
+//        ofs << "VIEWPOINT 0 0 0 1 0 0 0" << std::endl;
+//        ofs << "POINTS " << points.size() << std::endl;
+//        ofs << "DATA ascii" << std::endl;
+//        
+//        for (auto &p : points) {
+//            ofs << p.x << " " << p.y << " " << p.z << std::endl;
+//        }
+//        
+//        ofs.close();
+//        
+//        ++count;
+//    }
+//    exit(1);
+
     
     double j1 = J1(), j2 = J2(), j3 = J3();
     double gamma[3];
@@ -640,40 +693,22 @@ void Calibration::calibrateNew()
     for (auto &pair : edges) { // Write to point cloud data file
         std::vector<cv::Point3d> points;
         
-//        cv::Point3d v;
-//        v.x = 0.09706488951812445;
-//        v.y = 0.0008342749492048746;
-//        v.z = 0.9952777055717382;
-//        for (double i = 0.0; i <= 1; i+=0.01) {
-//            ofs << v.x * i << " " << v.y * i << " " << v.z * i << std::endl;
-//        }
-//        cv::Point3d b, g;
-//        b.x = 0.9987986245524334;
-//        b.y = 0;
-//        b.z = -0.04900313859506553;
-//        g.x = 0.04900312150193756;
-//        g.y = 0.0008352448053886313;
-//        g.z = 0.9987982761544903;
-//        for (double i = 0.0; i <= 1; i+=0.01) {
-//            points.push_back(b*i);
-//        }
-//        for (double i = 0.0; i <= 1; i+=0.01) {
-//            points.push_back(g*i);
-//        }
-        
-        for (int j = 0; j < 2; ++j) {
-//            for (auto n : pair.normalVector[j]) {
-//                cv::Point3d n_(n.row(2));
-//                for (double i = 0.0; i <= 1; i+=0.01) {
-//                    points.push_back(n_*i);
-//                }
-//            }
-            
-            cv::Mat l = pair.lineVector[j].row(2);
-            for (double i = 0.0; i <= 1; i+=0.01){
-                points.push_back(cv::Point3d(l)*i);
+        for (int j = 0; j < 1; ++j) {
+            std::vector<cv::Mat> ns;
+            for (auto &n : pair.normalVector[1]) {
+                ns.push_back(n.row(2).t());
             }
-        
+            cv::Mat h = pair.lineVector[0].row(2).t();
+            cv::Mat v_ = pair.lineVector[1].row(2).t();
+            cv::Mat v = pair.calcVertical(h, ns);
+            std::cout << acos(v.dot(v_))*180/M_PI << std::endl;
+            for (double i = 0.0; i <= 1; i+=0.01){
+                points.push_back(cv::Point3d(v)*i);
+            }
+            for (double i = 0.0; i <= 1; i+=0.01){
+                points.push_back(cv::Point3d(h)*i);
+            }
+            
             for (auto &line : pair.edge[j]) {
                 for (auto &point : line) {
                     cv::Point3d m  = point->m;
@@ -681,7 +716,6 @@ void Calibration::calibrateNew()
                 }
             }
         }
-        
         
         std::ofstream ofs(std::to_string(count) + ".pcd");
         ofs << "VERSION .7" << std::endl;
@@ -700,9 +734,6 @@ void Calibration::calibrateNew()
         }
         
         ofs.close();
-        
-        pair.calcF();
-//        exit(80);
         
         ++count;
         
