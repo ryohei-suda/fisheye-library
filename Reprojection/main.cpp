@@ -37,8 +37,8 @@ int main(int argc, const char * argv[])
     std::cout << "center: " << IncidentVector::getCenter() << std::endl;
     std::cout << "image size: " << IncidentVector::getImgSize() << std::endl;
     std::cout << "ai: ";
-    for (std::vector<double>::iterator it = IncidentVector::getA().begin(); it != IncidentVector::getA().end(); ++it) {
-        std::cout << *it << '\t';
+    for (auto &ai : IncidentVector::getA()) {
+        std::cout << ai << '\t';
     }
     std::cout << std::endl;
     

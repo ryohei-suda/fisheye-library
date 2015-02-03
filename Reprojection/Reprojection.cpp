@@ -8,6 +8,7 @@
 
 #include "Reprojection.h"
 
+int Reprojection::precision = 100;
 
 void Reprojection::loadPrameters(std::string filename)
 {
