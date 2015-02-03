@@ -7,25 +7,93 @@
 //
 
 #include <iostream>
+#include <fstream>
 #include <opencv2/opencv.hpp>
-#include <opencv2/nonfree/nonfree.hpp>
-#include <opencv2/legacy/legacy.hpp>
+//#include <opencv2/nonfree/nonfree.hpp>
+//#include <opencv2/legacy/legacy.hpp>
+#include "../Reprojection/Reprojection.h"
+#include <sys/stat.h>
 
 int main(int argc, const char * argv[])
 {
-    cv::initModule_nonfree(); // Needs for surf detection
+//    cv::initModule_nonfree(); // Needs for surf detection
     
-    // Reading images
-    std::string img1name, img2name;
-    std::cout << "Type the first image file > ";
-    std::cin >> img1name;
-    std::cout << "Type the second image file > ";
-    std::cin >> img2name;
+    std::string dir_i = "images";
+    std::string dir_m = "matches";
+    std::string dir_r = "outReconstruct";
+    mkdir(dir_i.c_str(), 0777);
+    mkdir(dir_m.c_str(), 0777);
+    mkdir(dir_r.c_str(), 0777);
+    std::ofstream list(dir_m+"/lists.txt");
     
-    cv::Mat img1, img2, prev, next;
-    img1 = cv::imread(img1name, CV_LOAD_IMAGE_COLOR);
-    img2 = cv::imread(img2name, CV_LOAD_IMAGE_COLOR);
+    Reprojection reproj;
+    double f_new;
     
+    std::string param;
+    std::cout << "Type parameter file name > ";
+    std::cin >> param;
+    reproj.loadPrameters(param);
+    
+    // Print parameters
+    std::cout << "f: " << IncidentVector::getF() << "\nf0: " << IncidentVector::getF0() << std::endl;
+    std::cout << "center: " << IncidentVector::getCenter() << std::endl;
+    std::cout << "image size: " << IncidentVector::getImgSize() << std::endl;
+    std::cout << "ai: ";
+    for (std::vector<double>::iterator it = IncidentVector::getA().begin(); it != IncidentVector::getA().end(); ++it) {
+        std::cout << *it << '\t';
+    }
+    std::cout << std::endl;
+    
+    reproj.theta2radius();
+    //    reproj.saveRadius2Theta("Stereographic.dat");
+    
+    cv::Mat mapx[5];
+    cv::Mat mapy[5];
+    f_new = 2*IncidentVector::getF();
+    
+    double theta_x[5] = {0, 45, -45, 0, 0}, theta_y[5] = {0, 0, 0, 45, -45};
+    for (int i = 0; i < 5; ++i) { // Convert from degree to radian
+        reproj.calcMaps(theta_x[i]*M_PI/180.0, theta_y[i]*M_PI/180.0, f_new, mapx[i], mapy[i]);
+    }
+    
+    while (true) {
+        std::string srcname;
+        std::cout << "Type source image file name > ";
+        std::cin >> srcname;
+        cv::Mat src = cv::imread(srcname);
+        if(src.empty()) { break; }
+        
+        cv::Mat dst;
+        for (int j = 0; j < 5; ++j) {
+            int npos = (int)srcname.find_last_of(".");
+            std::string outname = srcname.substr(0,npos)+"."+std::to_string(j)+".png";
+            std::cout << "Writing " << outname << " ...";
+            
+            cv::remap(src, dst, mapx[j], mapy[j], cv::INTER_LINEAR); // Rectify
+            cv::imwrite(dir_i +"/"+outname, dst);
+            
+            list << outname << "; " << IncidentVector::getImgSize().width << "; " << IncidentVector::getImgSize().height << "; " << f_new << "; 0; " << IncidentVector::getCenter().x << "; 0; " << f_new << "; " << IncidentVector::getCenter().y << "; 0; 0; 1" << std::endl;
+            
+            std::cout << " done" << std::endl;
+        }
+            
+    }
+    list.close();
+    
+    std::cout << "\nFor 3D reconstruction, execute the following command." << std::endl;
+    std::cout << "$ <openMVG dir>/software/SfM/Release/openMVG_main_computeMatches -i " << dir_i << " -e *.png " << " -o " << dir_m << std::endl;
+    std::cout << "$ <openMVG dir>/software/SfM/Release/openMVG_main_IncrementalSfM -i " << dir_i  << " -m " << dir_m << " -o " << dir_r << " -p 1" << std::endl;
+    std::cout << "$ cd" << dir_r << "/PMVS" << std::endl;
+    std::cout << "$ <CMVS-PMVS dir>/main/pmvs2 pmvs_options.txt" << std::endl;
+    /*
+     
+     // Reading images
+     std::string img1name, img2name;
+     std::cout << "Type the first image file > ";
+     std::cin >> img1name;
+     std::cout << "Type the second image file > ";
+     std::cin >> img2name;
+     
     cv::cvtColor(img1, prev, CV_RGB2GRAY);
     cv::cvtColor(img2, next, CV_RGB2GRAY);
     
@@ -145,6 +213,7 @@ int main(int argc, const char * argv[])
     cv::namedWindow("disparity", CV_WINDOW_NORMAL);
     cv::imshow("disparity", show);
     cv::waitKey();
-    
+    */
+     
     return 0;
 }
