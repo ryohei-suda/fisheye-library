@@ -121,9 +121,11 @@ int main(int argc, const char * argv[])
 //    outname.at(outname.size()-5) = '2';
 //    calib.save(outname);
 //    calib.calibrate2();
-    
+    IncidentVector::initA(0);
+    calib.calibrate(false);
+    IncidentVector::initA(a_size);
     calib.calibrateNew();
-    
+    calib.save(outname);
     
 //    calib.calibrate(true);
 //    calib.save(std::string("d_")+outname);

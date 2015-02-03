@@ -75,7 +75,7 @@ double Pair::calcF()
     for (auto &n : normalVector[1]) {
         ns.push_back(n.row(2).t());
     }
-    std::cout << "--------------" << std::endl;
+//    std::cout << "--------------" << std::endl;
     cv::Mat v = calcVertical(h, ns);
 //    std::cout << h << v << lineVector[1].row(2).t() << std::endl;
 //    std::cout << v << std::endl;

@@ -738,7 +738,6 @@ void Calibration::calibrateNew()
         ++count;
         
     }
-    std::cin >> count;
     
      F0 = F();
     
@@ -777,7 +776,9 @@ void Calibration::calibrateNew()
         
         cv::Mat delta;
         double F_;
+        int local_iterations = 0, max_local_iterations = 100;
         while (true) {
+            ++local_iterations;
             ++iterations;
             std::cout << "------------------------ Iteration "<< iterations << " -------------------------" << std::endl;
             //            std::cout << left << right << std::endl;
@@ -803,11 +804,11 @@ void Calibration::calibrateNew()
             IncidentVector::setCenter(center_);
             for (auto &pair : edges) {
                 pair.calcM();
-                pair.calcNormal();
-                pair.calcLine();
-                pair.calcMd();
-                pair.calcMc();
-                pair.calcMcc();
+//                pair.calcNormal();
+//                pair.calcLine();
+//                pair.calcMd();
+//                pair.calcMc();
+//                pair.calcMcc();
             }
             
             F_ =  F();
@@ -823,6 +824,12 @@ void Calibration::calibrateNew()
                 break;
             } else {
                 C *= 10;
+                if (C == INFINITY) {
+                    C = pow(10,100.);
+                }
+                if (local_iterations > max_local_iterations) {
+                    break;
+                }
             }
         }
         
@@ -841,13 +848,16 @@ void Calibration::calibrateNew()
             }
         }
         
-        if (converged) {
+        if (converged && F_<= F0) {
             std::cout << "converged" << std::endl;
             break;
             
         } else {
             F0 = F_;
             C /= 10.0;
+            if (C == 0.) {
+                C = 1./pow(10,100);
+            }
         }
     }
     
