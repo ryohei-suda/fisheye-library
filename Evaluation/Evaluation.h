@@ -11,9 +11,10 @@
 
 #include <vector>
 #include "../Calibration/Pair.h"
-#include "../Calibration/StereographicProjection.h"
-#include "../Calibration/EquidistanceProjection.h"
-#include "../Calibration/EquisolidAngleProjection.h"
+#include "../libs/StereographicProjection.h"
+#include "../libs/EquidistanceProjection.h"
+#include "../libs/EquisolidAngleProjection.h"
+#include "../libs/OrthographicProjection.h"
 #include "../libs/tinyxml2.h"
 
 class Evaluation {

@@ -107,7 +107,7 @@ void Evaluation::loadData(std::string filename) {
                         points.push_back(new StereographicProjection(point));
                         break;
                     case 1:
-                        //TODO add Perspective projection
+                        points.push_back(new OrthographicProjection(point));
                         break;
                     case 2:
                         points.push_back(new EquidistanceProjection(point));
@@ -134,23 +134,73 @@ void Evaluation::projectAllPoints()
 {
     double errors[1000] = {0};
     int count[1000] = {0};
+//    
+//    for (auto &pair : pairs) {
+//        pair.calcM();
+//        pair.calcNormal();
+//        for (int i = 0; i < 2; ++i) {
+//            for (int j = 0; j < pair.normalVector[i].size(); ++j) {
+//                cv::Point3d norm(pair.normalVector[i].at(j).row(2));
+//                for (auto &p : pair.edge[i][j]) {
+//                    double error = fabs(M_PI_2 - acos(norm.ddot(p->m)));
+//                    double degree = p->getTheta() * 180 / M_PI;
+////                    std::cout << error << " " << error*180/M_PI << " " << p->theta << " " << degree <<  std::endl;
+//                    errors[(int)(degree*10)] += error*180/M_PI;
+//                    ++count[(int)(degree*10)];
+//                }
+//            }
+//        }
+//    }
+//    for (int i = 0; i < 1000; ++i) {
+//        if (count[i] != 0) {
+//            std::cout << (double)i/10 << " " << errors[i]/count[i] << std::endl;
+//        }
+//    }
+    
     
     for (auto &pair : pairs) {
         pair.calcM();
         pair.calcNormal();
-        for (int i = 0; i < 2; ++i) {
-            for (int j = 0; j < pair.normalVector[i].size(); ++j) {
-                cv::Point3d norm(pair.normalVector[i].at(j).row(2));
-                for (auto &p : pair.edge[i][j]) {
-                    double error = fabs(M_PI_2 - acos(norm.ddot(p->m)));
-                    double degree = p->getTheta() * 180 / M_PI;
-//                    std::cout << error << " " << error*180/M_PI << " " << p->theta << " " << degree <<  std::endl;
-                    errors[(int)(degree*10)] += error*180/M_PI;
-                    ++count[(int)(degree*10)];
-                }
-            }
+        pair.calcLine();
+        
+    cv::Mat h = pair.lineVector[0].row(2).t();
+    std::vector<cv::Mat> ns;
+    for (auto &n : pair.normalVector[1]) {
+        ns.push_back(n.row(2).t());
+    }
+    cv::Mat v = pair.calcVertical(h, ns);
+    
+    for (int i = 0; i < pair.normalVector[0].size(); ++i ) { // First line pair
+        std::vector<cv::Mat> ps;
+        for (auto &p : pair.edge[0][i]) {
+            ps.push_back( cv::Mat(p->m) );
+        }
+        cv::Mat wn = pair.calcVertical(h, ps);
+        
+        for (auto &p : pair.edge[0][i]) { // Calculate error
+            double error = M_PI_2 - fabs(acos(p->m.ddot(cv::Point3d(wn))));
+            double degree = p->getTheta() * 180 / M_PI;
+            errors[(int)(degree*10)] += error *180/M_PI;
+            ++count[(int)(degree*10)];
         }
     }
+    
+    for (int i = 0; i < pair.normalVector[1].size(); ++i ) { // Second line pair
+        std::vector<cv::Mat> ps;
+        for (auto &p : pair.edge[1][i]) {
+            ps.push_back( cv::Mat(p->m) );
+        }
+        cv::Mat wn = pair.calcVertical(h, ps);
+        
+        for (auto &p : pair.edge[1][i]) { // Calculate error
+            double error = M_PI_2 - fabs(acos(p->m.ddot(cv::Point3d(wn))));
+            double degree = p->getTheta() * 180 / M_PI;
+            errors[(int)(degree*10)] += error *180/M_PI;
+            ++count[(int)(degree*10)];
+        }
+    }
+    }
+    
     for (int i = 0; i < 1000; ++i) {
         if (count[i] != 0) {
             std::cout << (double)i/10 << " " << errors[i]/count[i] << std::endl;
