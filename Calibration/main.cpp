@@ -20,14 +20,34 @@ int main(int argc, const char * argv[])
 {
     Calibration calib;
     std::string filename;
-    int a_size;
+    int a_size, a_size_init = 0;
     std::string outname;
+    bool normalize1 = true, normalize2 = true;
     
     if (argc == 4) { // From command line
         filename = std::string(argv[1]);
         a_size = atoi(argv[2]);
         outname = std::string(argv[3]);
         std::cout << filename << " " << a_size << " " << outname << std::endl;
+    }
+    else if (argc == 7) { // ./Calibration lines.xml params.xml u 0 n 0
+        filename = std::string(argv[1]);
+        outname = std::string(argv[2]);
+        if (std::string("n").compare(std::string(argv[3])) == 0) {
+            normalize1 = true;
+        } else {
+            normalize1 = false;
+        }
+        a_size_init = atoi(argv[4]);
+        if (std::string("n").compare(std::string(argv[5])) == 0) {
+            normalize2 = true;
+        } else {
+            normalize2 = false;
+        }
+        a_size = atoi(argv[6]);
+        
+        std::cout << filename << " " << outname << normalize1 << a_size_init << normalize2 << a_size<< std::endl;
+        
     } else {
         std::cout << "Type filename > ";
         std::cin >> filename;
@@ -120,12 +140,22 @@ int main(int argc, const char * argv[])
 //    calib.calibrate(true);
 //    outname.at(outname.size()-5) = '2';
 //    calib.save(outname);
-//    calib.calibrate2();
-//    IncidentVector::initA(0);
 //    calib.calibrate(false);
-    IncidentVector::initA(a_size);
-    calib.calibrateNew();
-    calib.save(outname);
+    
+    if (argc == 4) { // Komagata
+        IncidentVector::initA(a_size);
+        calib.calibrateNew();
+        calib.save(outname);
+    } else if (argc == 7 ) { // Kanatani
+            IncidentVector::initA(a_size_init);
+            calib.calibrate(normalize1);
+            calib.save(outname.insert(outname.size()-3, "1."));
+        
+            IncidentVector::initA(a_size);
+            calib.calibrate(normalize2);
+            outname.at(outname.size()-5) = '2';
+            calib.save(outname);
+    }
     
 //    calib.calibrate(true);
 //    calib.save(std::string("d_")+outname);
