@@ -42,7 +42,6 @@ public:
     void save(std::string);
     
     void calibrate(bool divide); // Do calibrate
-    void calibrate2(); // For new optimazation test
     
     
     // "c" means 1st or 2nd derivatives

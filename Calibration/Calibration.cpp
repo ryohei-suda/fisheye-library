@@ -222,7 +222,9 @@ void Calibration::calibrate(bool divide)
     
     int iterations = 0;
     cv::Mat delta_prev= cv::Mat::ones(IncidentVector::nparam, 1, CV_64F);
+    int local_iterations = 0, max_local_iterations = 100;
     while (true) {
+        ++local_iterations;
         cv::Point2d center = IncidentVector::getCenter();
         double f = IncidentVector::getF();
         std::vector<double> a = IncidentVector::getA();
@@ -299,15 +301,21 @@ void Calibration::calibrate(bool divide)
                 break;
             } else {
                 C *= 10;
+                if (C == INFINITY) {
+                    C = 0.0001;
+                }
+                if (local_iterations > max_local_iterations) {
+                    break;
+                }
             }
         }
         
         // Judge wether converged
         bool converged = true;
         double epsilon = 1.0e-5;
-        if (fabs(delta.at<double>(0) / center.x) > epsilon ||
-            fabs(delta.at<double>(1) / center.y) > epsilon ||
-            fabs(delta.at<double>(2) / f) > epsilon) {
+        if (fabs(delta.at<double>(0)) > epsilon ||
+            fabs(delta.at<double>(1)) > epsilon ||
+            fabs(delta.at<double>(2)) > epsilon) {
             converged = false;
         }
         for (int i = 3; i < IncidentVector::nparam && converged; ++i) {
@@ -317,157 +325,19 @@ void Calibration::calibrate(bool divide)
             }
         }
         
-        if (converged) {
+        if (converged && (local_iterations <= max_local_iterations)) {
             std::cout << "converged" << std::endl;
             break;
             
         } else {
             J0 = J_;
             C /= 10.0;
+            if (C == 0.) {
+                C = 0.0001;
+            }
         }
     }
     
-    const auto duration = std::chrono::system_clock::now() - start_time;
-    int minutes = (int)std::chrono::duration_cast<std::chrono::minutes>(duration).count();
-    int seconds = (int)std::chrono::duration_cast<std::chrono::seconds>(duration).count() - minutes*60;
-    std::cout << "Calibration has been finished in " << minutes << " minutes " << seconds << " seconds" << std::endl;
-}
-
-void Calibration::calibrate2()
-{
-    const auto start_time = std::chrono::system_clock::now();
-    double J0;
-    double C = 0.0001;
-    
-    double (Calibration::*J[3])() = {&Calibration::J1, &Calibration::J2,&Calibration::J3};
-    double (Calibration::*Jc[3])(int) = {&Calibration::J1c, &Calibration::J2c,&Calibration::J3c};
-    double (Calibration::*Jcc[3])(int, int) = {&Calibration::J1cc, &Calibration::J2cc,&Calibration::J3cc};
-    while(true){
-    for (int t = 2; t >= 0; --t) { // For each of Orthongonality, Parallelism, and Colinearity
-        
-        for (auto &pair : edges) {
-            pair.calcM();
-            pair.calcNormal();
-            pair.calcLine();
-        }
-        C = 0.0001;
-        J0 = (this->*J[t])();
-        switch (t) {
-            case 0:
-                std::cout << "Colinearity ";
-                break;
-            case 1:
-                std::cout << "Parallelism ";
-                break;
-            case 2:
-                std::cout << "Othogonality ";
-                break;
-        }
-        std::cout << "J  \t" << J0 << std::endl;
-        
-        std::cout << "======================================" << std::endl;
-        
-        int iterations = 0;
-        cv::Mat delta_prev= cv::Mat::ones(IncidentVector::nparam, 1, CV_64F);
-        while (true) {
-            ++iterations;
-            cv::Point2d center = IncidentVector::getCenter();
-            double f = IncidentVector::getF();
-            std::vector<double> a = IncidentVector::getA();
-            
-            for (auto &pair : edges) {
-                pair.calcM();
-                pair.calcNormal();
-                pair.calcLine();
-                pair.calcDerivatives();
-            }
-            
-            cv::Mat left(IncidentVector::nparam, IncidentVector::nparam, CV_64F);
-            cv::Mat right(IncidentVector::nparam, 1, CV_64F);
-            
-            for (int i = 0; i < IncidentVector::nparam; ++i) {
-                for (int j = 0; j < IncidentVector::nparam; ++j) {
-                    // (1+C) isn't calculated here, look at the next while loop
-                    left.at<double>(i, j) = (this->*Jcc[t])(i, j);
-                }
-                right.at<double>(i) = (this->*Jc[t])(i);
-            }
-            
-            cv::Mat delta;
-            double J_;
-            while (true) {
-                cv::Mat cmat = cv::Mat::ones(IncidentVector::nparam, IncidentVector::nparam, CV_64F); // To calculate (1+C)
-                for (int i = 0; i < IncidentVector::nparam; ++i) {
-                    cmat.at<double>(i,i) = 1+C;
-                }
-                cv::solve(left.mul(cmat), -right, delta);
-//                std::cout << "------------------------ Iteration "<< iterations << " -------------------------" << std::endl;
-//                std::cout << "Delta: " << delta << std::endl;
-                
-                cv::Point2d center_(center.x + delta.at<double>(0), center.y + delta.at<double>(1));
-                double f_ = f + delta.at<double>(2);
-                std::vector<double> a_;
-                for (int i = 0; i < a.size(); ++i) {
-                    a_.push_back(a[i] + delta.at<double>(i+3));
-                }
-                
-                // Recalculate m and relatives based on new parameters
-                IncidentVector::setF(f_);
-                IncidentVector::setA(a_);
-                IncidentVector::setCenter(center_);
-                for (auto &pair : edges) {
-                    pair.calcM();
-                    pair.calcNormal();
-                    pair.calcLine();
-                }
-                
-                J_ = (this->*J[t])();
-//                std::cout << "C: " << C << "\tJ0: " << J0 << "\tJ_: " << J_ << std::endl;
-                
-                if ( J_  <= J0) {
-                    std::cout << "------------------------ Iteration "<< iterations << " -------------------------" << std::endl;
-                    std::cout << "Delta: " << delta << std::endl;
-                    std::cout << "C: " << C << "\tJ0: " << J0 << "\tJ_: " << J_ << std::endl;
-                    std::cout << "Center:\t" << center_ << std::endl;
-                    std::cout << "     f:\t" << f_ << std::endl;
-                    for (int i = 0; i < a_.size(); ++i) {
-                        std::cout << "    a" << i << ":\t" << a_[i] << std::endl;
-                    }
-                    
-                    break;
-                } else {
-                    C *= 10;
-                }
-            }
-            
-            // Judge wether converged
-            bool converged = true;
-            double epsilon = 1.0e-5;
-            if (fabs(delta.at<double>(0) / center.x) > epsilon ||
-                fabs(delta.at<double>(1) / center.y) > epsilon ||
-                fabs(delta.at<double>(2) / f) > epsilon) {
-                converged = false;
-            }
-            for (int i = 3; i < IncidentVector::nparam && converged; ++i) {
-                if (fabs(delta.at<double>(i)) /  a.at(i-3) > epsilon) {
-                    converged = false;
-                    break;
-                }
-            }
-            
-            if (converged) {
-                break;
-                
-            } else {
-                J0 = J_;
-                C /= 10.0;
-            }
-        }
-        if (t == 0) {
-            t = 3;
-        }
-    }
-    }
     const auto duration = std::chrono::system_clock::now() - start_time;
     int minutes = (int)std::chrono::duration_cast<std::chrono::minutes>(duration).count();
     int seconds = (int)std::chrono::duration_cast<std::chrono::seconds>(duration).count() - minutes*60;
@@ -650,8 +520,7 @@ double Calibration::Fc(int c)
             std::vector<cv::Mat> w = pair.w[i];
             std::vector<Pair::C> mc = pair.Mc[i];
             for (int j = 0; j < w.size(); ++j) {
-                cv::Mat tmp = w[j].t() * mc[j].at(c) * w[j];
-                fc += tmp.at<double>(0);
+                fc += (w[j].t() * mc[j].at(c)).dot(w[j].t());
             }
         }
     }
@@ -668,8 +537,7 @@ double Calibration::Fcc(int c1, int c2)
             std::vector<cv::Mat> w = pair.w[i];
             std::vector<Pair::Cc> mcc = pair.Mcc[i];
             for (int j = 0; j < w.size(); ++j) {
-                cv::Mat tmp = w[j].t() * mcc[j].at(c1,c2) * w[j];
-                fcc += tmp.at<double>(0);
+                fcc += (w[j].t() * mcc[j].at(c1,c2)).dot(w[j].t());
             }
         }
     }
@@ -689,55 +557,55 @@ void Calibration::calibrateNew()
         pair.calcLine();
     }
     
-    int count = 0;
-    for (auto &pair : edges) { // Write to point cloud data file
-        std::vector<cv::Point3d> points;
-        
-        for (int j = 0; j < 1; ++j) {
-            std::vector<cv::Mat> ns;
-            for (auto &n : pair.normalVector[1]) {
-                ns.push_back(n.row(2).t());
-            }
-            cv::Mat h = pair.lineVector[0].row(2).t();
-            cv::Mat v_ = pair.lineVector[1].row(2).t();
-            cv::Mat v = pair.calcVertical(h, ns);
-            std::cout << acos(v.dot(v_))*180/M_PI << std::endl;
-            for (double i = 0.0; i <= 1; i+=0.01){
-                points.push_back(cv::Point3d(v)*i);
-            }
-            for (double i = 0.0; i <= 1; i+=0.01){
-                points.push_back(cv::Point3d(h)*i);
-            }
-            
-            for (auto &line : pair.edge[j]) {
-                for (auto &point : line) {
-                    cv::Point3d m  = point->m;
-                    points.push_back(m);
-                }
-            }
-        }
-        
-        std::ofstream ofs(std::to_string(count) + ".pcd");
-        ofs << "VERSION .7" << std::endl;
-        ofs << "FIELDS x y z" << std::endl;
-        ofs << "SIZE 4 4 4" << std::endl;
-        ofs << "TYPE F F F" << std::endl;
-        ofs << "COUNT 1 1 1" << std::endl;
-        ofs << "WIDTH " << points.size() << std::endl;
-        ofs << "HEIGHT 1" << std::endl;
-        ofs << "VIEWPOINT 0 0 0 1 0 0 0" << std::endl;
-        ofs << "POINTS " << points.size() << std::endl;
-        ofs << "DATA ascii" << std::endl;
-        
-        for (auto &p : points) {
-            ofs << p.x << " " << p.y << " " << p.z << std::endl;
-        }
-        
-        ofs.close();
-        
-        ++count;
-        
-    }
+//    int count = 0;
+//    for (auto &pair : edges) { // Write to point cloud data file
+//        std::vector<cv::Point3d> points;
+//        
+//        for (int j = 0; j < 1; ++j) {
+//            std::vector<cv::Mat> ns;
+//            for (auto &n : pair.normalVector[1]) {
+//                ns.push_back(n.row(2).t());
+//            }
+//            cv::Mat h = pair.lineVector[0].row(2).t();
+//            cv::Mat v_ = pair.lineVector[1].row(2).t();
+//            cv::Mat v = pair.calcVertical(h, ns);
+//            std::cout << acos(v.dot(v_))*180/M_PI << std::endl;
+//            for (double i = 0.0; i <= 1; i+=0.01){
+//                points.push_back(cv::Point3d(v)*i);
+//            }
+//            for (double i = 0.0; i <= 1; i+=0.01){
+//                points.push_back(cv::Point3d(h)*i);
+//            }
+//            
+//            for (auto &line : pair.edge[j]) {
+//                for (auto &point : line) {
+//                    cv::Point3d m  = point->m;
+//                    points.push_back(m);
+//                }
+//            }
+//        }
+//        
+//        std::ofstream ofs(std::to_string(count) + ".pcd");
+//        ofs << "VERSION .7" << std::endl;
+//        ofs << "FIELDS x y z" << std::endl;
+//        ofs << "SIZE 4 4 4" << std::endl;
+//        ofs << "TYPE F F F" << std::endl;
+//        ofs << "COUNT 1 1 1" << std::endl;
+//        ofs << "WIDTH " << points.size() << std::endl;
+//        ofs << "HEIGHT 1" << std::endl;
+//        ofs << "VIEWPOINT 0 0 0 1 0 0 0" << std::endl;
+//        ofs << "POINTS " << points.size() << std::endl;
+//        ofs << "DATA ascii" << std::endl;
+//        
+//        for (auto &p : points) {
+//            ofs << p.x << " " << p.y << " " << p.z << std::endl;
+//        }
+//        
+//        ofs.close();
+//        
+//        ++count;
+//        
+//    }
     
      F0 = F();
     
@@ -804,15 +672,16 @@ void Calibration::calibrateNew()
             IncidentVector::setCenter(center_);
             for (auto &pair : edges) {
                 pair.calcM();
-//                pair.calcNormal();
-//                pair.calcLine();
+                pair.calcNormal();
+                pair.calcLine();
 //                pair.calcMd();
 //                pair.calcMc();
 //                pair.calcMcc();
             }
             
             F_ =  F();
-            std::cout << "C: " << C << "\tF0: " << F0 << "\tF_: " << F_ << std::endl;;
+            std::cout << "C: " << C << "\tF0: " << F0 << "\tF_: " << F_ << std::endl;
+            std::cout << "J1: " << J1() << "\tJ2: " << J2() << "\tJ3: " << J3() << std::endl;
             
             if ( F_  <= F0) {
                 std::cout << "Center:\t" << center_ << std::endl;
@@ -825,7 +694,7 @@ void Calibration::calibrateNew()
             } else {
                 C *= 10;
                 if (C == INFINITY) {
-                    C = pow(10,100.);
+                    C = 0.0001;
                 }
                 if (local_iterations > max_local_iterations) {
                     break;
@@ -836,9 +705,9 @@ void Calibration::calibrateNew()
         // Judge wether converged
         bool converged = true;
         double epsilon = 1.0e-5;
-        if (fabs(delta.at<double>(0) / center.x) > epsilon ||
-            fabs(delta.at<double>(1) / center.y) > epsilon ||
-            fabs(delta.at<double>(2) / f) > epsilon) {
+        if (fabs(delta.at<double>(0)) > epsilon ||
+            fabs(delta.at<double>(1)) > epsilon ||
+            fabs(delta.at<double>(2)) > epsilon) {
             converged = false;
         }
         for (int i = 3; i < IncidentVector::nparam && converged; ++i) {
@@ -848,7 +717,7 @@ void Calibration::calibrateNew()
             }
         }
         
-        if (converged && F_<= F0) {
+        if (converged && (local_iterations <= max_local_iterations)) {
             std::cout << "converged" << std::endl;
             break;
             
@@ -856,7 +725,7 @@ void Calibration::calibrateNew()
             F0 = F_;
             C /= 10.0;
             if (C == 0.) {
-                C = 1./pow(10,100);
+                C = 0.0001;
             }
         }
     }
