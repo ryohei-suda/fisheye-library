@@ -43,7 +43,7 @@ int main(int argc, const char * argv[])
     std::cout << std::endl;
     
     reproj.theta2radius();
-//    reproj.saveRadius2Theta("Stereographic.dat");
+    reproj.saveRadius2Theta("graph.dat");
     
     std::string srcname;
     std::cout << "Type source image file name > ";
@@ -55,7 +55,7 @@ int main(int argc, const char * argv[])
     std::cout << "Type prefer focal length in pixel unit > ";
     std::cin >> f_;
     
-    double theta_x, theta_y;
+    double theta_x, theta_y, theta_z;
     std::cout << "Type rotation degree around x axis > ";
     std::cin >> theta_x;
     theta_x = theta_x * M_PI /180.0;
@@ -64,10 +64,14 @@ int main(int argc, const char * argv[])
     std::cin >> theta_y;
     theta_y = theta_y * M_PI /180.0;
     
-    reproj.calcMaps(theta_x, theta_y, f_, mapx, mapy);
+    std::cout << "Type rotation degree around z axis > ";
+    std::cin >> theta_z;
+    theta_z = theta_z * M_PI /180.0;
+    
+    reproj.calcMaps(0, -IncidentVector::getImgSize().height/2, theta_x, theta_y, theta_z, f_, mapx, mapy);
     
     cv::Mat dst;
-    cv::remap(src, dst, mapx, mapy, cv::INTER_LINEAR); // Rectify
+    cv::remap(src, dst, mapx, mapy, cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(0,0,0)); // Rectify
     cv::namedWindow("src", CV_GUI_NORMAL);
     cv::imshow("src", src);
     cv::moveWindow("src", 0, 0);

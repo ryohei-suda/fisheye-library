@@ -31,6 +31,6 @@ public:
     void theta2radius();
     void saveTheta2Radius(std::string filename);
     void saveRadius2Theta(std::string filename);
-    void calcMaps(double theta_x, double theta_y, double f_, cv::Mat& mapx, cv::Mat& mapy);};
+    void calcMaps(int x, int y, double theta_x, double theta_y, double theta_z, double f_, cv::Mat& mapx, cv::Mat& mapy);};
 
 #endif /* defined(__Reprojection__Reprojection__) */

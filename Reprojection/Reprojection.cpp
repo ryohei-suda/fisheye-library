@@ -8,7 +8,7 @@
 
 #include "Reprojection.h"
 
-int Reprojection::precision = 100;
+int Reprojection::precision = 10;
 
 void Reprojection::loadPrameters(std::string filename)
 {
@@ -56,8 +56,8 @@ void Reprojection::theta2radius()
         max_r += pow(IncidentVector::getCenter().y, 2);
     }
     max_r = sqrt(max_r);
-    max_r = 2000;
-    int theta_size = round(max_r) * precision + 10; // If PRECISION = 10, r = {0, 0.1, 0.2, 0.3, ...}
+//    max_r = 2000;
+    int theta_size = max_r * precision + 10; // If PRECISION = 10, r = {0, 0.1, 0.2, 0.3, ...}
     
     r2t.resize(theta_size);
     cv::Point2d p(0,0);
@@ -92,11 +92,11 @@ void Reprojection::theta2radius()
     t2r.resize(r_size);
     int j = 1; // j/PRECISION: radius
     rad_step = r2t[theta_size-1] / r_size; // 0 ~ theta[end] radian
-    rad_step = 2.35 / r_size;
+    rad_step = 2.2 / r_size; // 130 degree of HFOV
     for (int i = 0; i < r_size; ++i) {
         double rad = rad_step * i;
         for (; j < theta_size; ++j) {
-            if (r2t[j] > rad) {
+            if (r2t[j] >= rad) {
                 t2r[i] = ((i*rad_step - r2t[j-1]) / (r2t[j]-r2t[j-1]) + j-1) / precision; // See my note on 2014/6/6
                 break;
             }
@@ -127,7 +127,7 @@ void Reprojection::saveRadius2Theta(std::string filename)
 }
 
 
-void Reprojection::calcMaps(double theta_x, double theta_y, double f_, cv::Mat& mapx, cv::Mat& mapy)
+void Reprojection::calcMaps(int x, int y, double theta_x, double theta_y, double theta_z, double f_, cv::Mat& mapx, cv::Mat& mapy)
 {
     mapx.create(IncidentVector::getImgSize().height, IncidentVector::getImgSize().width, CV_32FC1);
     mapy.create(IncidentVector::getImgSize().height, IncidentVector::getImgSize().width, CV_32FC1);
@@ -140,12 +140,16 @@ void Reprojection::calcMaps(double theta_x, double theta_y, double f_, cv::Mat& 
                   cos(theta_y),  0, sin(theta_y),
                   0,             1,            0,
                   -sin(theta_y), 0, cos(theta_y));
-    cv::Mat R = Ry * Rx;
+    cv::Mat Rz = (cv::Mat_<double>(3,3) <<
+                  cos(theta_z), -sin(theta_z), 0,
+                  sin(theta_z),  cos(theta_z), 0,
+                  0,                        0, 1);
+    cv::Mat R = Rz * Ry * Rx;
     
     for (int y_ = 0; y_ < IncidentVector::getImgSize().height; ++y_) { // y
         for (int x_ = 0; x_ < IncidentVector::getImgSize().width; ++x_) { // x
             
-            cv::Point2d p2(x_ - IncidentVector::getImgSize().width/2.0, y_ - IncidentVector::getImgSize().height/2.0);
+            cv::Point2d p2(x_ - IncidentVector::getImgSize().width/2.0 + x, y_ - IncidentVector::getImgSize().height/2.0 + y);
             cv::Mat p3 = (cv::Mat_<double>(3,1) << p2.x, p2.y, f_);
             cv::Mat real = 1.0/sqrt(pow(p2.x,2) + pow(p2.y,2) + pow(f_,2)) * R * p3;
             
@@ -154,8 +158,8 @@ void Reprojection::calcMaps(double theta_x, double theta_y, double f_, cv::Mat& 
             double z = real.at<double>(2,0);
             double theta = atan2(sqrt(1-pow(z,2)), z);
             if (t2r.size() <= (int)(theta/rad_step)) {
-                mapx.at<float>(y_,x_) = 0;
-                mapy.at<float>(y_,x_) = 0;
+                mapx.at<float>(y_,x_) = -1;
+                mapy.at<float>(y_,x_) = -1;
                 continue;
             }
             cv::Point2d final = IncidentVector::getCenter() + t2r[(int)(theta/rad_step)] / sqrt(1-pow(z,2)) * cv::Point2d(x,y);
