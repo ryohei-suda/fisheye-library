@@ -44,24 +44,44 @@ int main(int argc, const char * argv[])
     }
     std::cout << std::endl;
     
+    
+    std::cout << "Type a prefer focal length > ";
+    std::cin >> f_new;
+    
+    double degree;
+    std::cout << "Type a rotation degree > ";
+    std::cin >> degree;
+    
+    int shift;
+    std::cout << "Type a shift of an image in y axis > ";
+    std::cin >> shift;
+    
     reproj.theta2radius();
     //    reproj.saveRadius2Theta("Stereographic.dat");
     
     cv::Mat mapx[5];
     cv::Mat mapy[5];
-    f_new = 2*IncidentVector::getF();
     
-    double theta_x[5] = {0, 45, -45, 0, 0}, theta_y[5] = {0, 0, 0, 45, -45};
+    double theta_x[5] = {0, -degree, -degree, -degree, -degree};
+    double theta_y[5] = {0,       0,       0,       0,       0};
+    double theta_z[5] = {0,     180,       0,      90,     -90};
+    int y[5]          = {0,    shift,  shift,   shift,   shift};
+    
     for (int i = 0; i < 5; ++i) { // Convert from degree to radian
-        reproj.calcMaps(theta_x[i]*M_PI/180.0, theta_y[i]*M_PI/180.0, f_new, mapx[i], mapy[i]);
+        reproj.calcMaps(0, y[i], theta_x[i]*M_PI/180.0, theta_y[i]*M_PI/180.0, theta_z[i]*M_PI/180.0, f_new, mapx[i], mapy[i]);
     }
     
     while (true) {
         std::string srcname;
         std::cout << "Type source image file name > ";
-        std::cin >> srcname;
+        if (!(std::cin >> srcname)) {
+            break;
+        }
         cv::Mat src = cv::imread(srcname);
-        if(src.empty()) { break; }
+        if(src.empty()) {
+            std::cout << "Cannot read " << srcname << "!" << std::endl;
+            continue;
+        }
         
         cv::Mat dst;
         for (int j = 0; j < 5; ++j) {
@@ -69,7 +89,7 @@ int main(int argc, const char * argv[])
             std::string outname = srcname.substr(0,npos)+"."+std::to_string(j)+".png";
             std::cout << "Writing " << outname << " ...";
             
-            cv::remap(src, dst, mapx[j], mapy[j], cv::INTER_LINEAR); // Rectify
+            cv::remap(src, dst, mapx[j], mapy[j], cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(0,0,0)); // Rectify
             cv::imwrite(dir_i +"/"+outname, dst);
             
             list << outname << "; " << IncidentVector::getImgSize().width << "; " << IncidentVector::getImgSize().height << "; " << f_new << "; 0; " << IncidentVector::getCenter().x << "; 0; " << f_new << "; " << IncidentVector::getCenter().y << "; 0; 0; 1" << std::endl;
@@ -81,10 +101,10 @@ int main(int argc, const char * argv[])
     list.close();
     
     std::cout << "\nFor 3D reconstruction, execute the following command." << std::endl;
-    std::cout << "$ <openMVG dir>/software/SfM/Release/openMVG_main_computeMatches -i " << dir_i << " -e *.png " << " -o " << dir_m << std::endl;
-    std::cout << "$ <openMVG dir>/software/SfM/Release/openMVG_main_IncrementalSfM -i " << dir_i  << " -m " << dir_m << " -o " << dir_r << " -p 1" << std::endl;
-    std::cout << "$ cd" << dir_r << "/PMVS" << std::endl;
-    std::cout << "$ <CMVS-PMVS dir>/main/pmvs2 pmvs_options.txt" << std::endl;
+    std::cout << "$ <openMVG dir>/software/SfM/openMVG_main_computeMatches -i " << dir_i << " -e *.png " << " -o " << dir_m << std::endl;
+    std::cout << "$ <openMVG dir>/software/SfM/openMVG_main_IncrementalSfM -i " << dir_i  << " -m " << dir_m << " -o " << dir_r << " -p 1" << std::endl;
+    std::cout << "$ cd " << dir_r << "/PMVS" << std::endl;
+    std::cout << "$ <CMVS-PMVS dir>/main/pmvs2 ./ pmvs_options.txt" << std::endl;
     /*
      
      // Reading images
