@@ -28,7 +28,6 @@ void LineDetection::loadImageXML(std::string filename)
     tinyxml2::XMLDocument doc;
     doc.LoadFile(filename.c_str());
     tinyxml2::XMLElement *root = doc.FirstChildElement("images");
-    
     const char *fl = root->FirstChildElement("focal_length")->GetText();
     focal_length = atof(fl);
     

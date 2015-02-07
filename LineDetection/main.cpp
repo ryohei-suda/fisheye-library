@@ -22,15 +22,15 @@ int main(int argc, const char * argv[])
     LineDetection ld;
 //    ld.editAllEdges(ld.loadEdgeXML(fname));
 
-    std::vector<std::vector<std::vector<cv::Point2f> > > edges = ld.loadEdgeXML(fname);
-    ld.saveParameters();
-    ld.editAllEdges(edges);
-    ld.saveParameters();
-    std::cout << "Type output XML file name > ";
-    std::string output0;
-    std::cin >> output0;
-    ld.writeXML(output0);
-    return 0;
+//    std::vector<std::vector<std::vector<cv::Point2f> > > edges = ld.loadEdgeXML(fname);
+//    ld.saveParameters();
+//    ld.editAllEdges(edges);
+//    ld.saveParameters();
+//    std::cout << "Type output XML file name > ";
+//    std::string output0;
+//    std::cin >> output0;
+//    ld.writeXML(output0);
+//    return 0;
     
     
     ld.loadImageXML(fname);
