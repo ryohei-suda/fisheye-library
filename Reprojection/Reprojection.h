@@ -10,8 +10,10 @@
 #define __Reprojection__Reprojection__
 
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <vector>
+#include <future>
 #include <opencv2/opencv.hpp>
 #include "../libs/IncidentVector.h"
 #include "../libs/OrthographicProjection.h"
@@ -31,6 +33,7 @@ public:
     void theta2radius();
     void saveTheta2Radius(std::string filename);
     void saveRadius2Theta(std::string filename);
-    void calcMaps(int x, int y, double theta_x, double theta_y, double theta_z, double f_, cv::Mat& mapx, cv::Mat& mapy);};
+    void calcMaps(int step_x, int step_y, double theta_x, double theta_y, double theta_z, double f_, cv::Mat& mapx, cv::Mat& mapy);
+};
 
 #endif /* defined(__Reprojection__Reprojection__) */

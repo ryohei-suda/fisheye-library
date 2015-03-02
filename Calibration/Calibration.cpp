@@ -222,9 +222,7 @@ void Calibration::calibrate(bool divide)
     
     int iterations = 0;
     cv::Mat delta_prev= cv::Mat::ones(IncidentVector::nparam, 1, CV_64F);
-    int local_iterations = 0, max_local_iterations = 100;
     while (true) {
-        ++local_iterations;
         cv::Point2d center = IncidentVector::getCenter();
         double f = IncidentVector::getF();
         std::vector<double> a = IncidentVector::getA();
@@ -251,7 +249,9 @@ void Calibration::calibrate(bool divide)
         
         cv::Mat delta;
         double J_;
+        int local_iterations = 0, max_local_iterations = 100;
         while (true) {
+            ++local_iterations;
             ++iterations;
             std::cout << "------------------------ Iteration "<< iterations << " -------------------------" << std::endl;
 //            std::cout << left << right << std::endl;

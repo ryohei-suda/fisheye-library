@@ -10,9 +10,6 @@
 #include <opencv2/opencv.hpp>
 #include "Reprojection.h"
 
-#define PRECISION 10
-
-
 int main(int argc, const char * argv[])
 {
     for (int i = 1; i < argc; ++i) {
@@ -22,6 +19,9 @@ int main(int argc, const char * argv[])
         reproj.theta2radius();
         fname.replace(fname.size()-3, fname.size(), "dat");
         reproj.saveTheta2Radius(fname);
+    }
+    if (argc > 1) {
+        return 0;
     }
     
     Reprojection reproj;
@@ -68,7 +68,7 @@ int main(int argc, const char * argv[])
     std::cin >> theta_z;
     theta_z = theta_z * M_PI /180.0;
     
-    reproj.calcMaps(0, -IncidentVector::getImgSize().height/2, theta_x, theta_y, theta_z, f_, mapx, mapy);
+    reproj.calcMaps(0, 0, theta_x, theta_y, theta_z, f_, mapx, mapy);
     
     cv::Mat dst;
     cv::remap(src, dst, mapx, mapy, cv::INTER_LINEAR, cv::BORDER_CONSTANT, cv::Scalar(0,0,0)); // Rectify

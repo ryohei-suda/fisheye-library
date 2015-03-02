@@ -95,7 +95,7 @@ int main(int argc, const char * argv[])
 
     
     // Show an image of all edges
-//    cv::Mat img = cv::Mat::zeros(IncidentVector::getImgSize().height, IncidentVector::getImgSize().width, CV_8UC3);
+//    cv::Mat img = cv::Mat::ones(IncidentVector::getImgSize().height, IncidentVector::getImgSize().width, CV_8UC1) * 255;
 //    cv::Vec3b color[30] = {cv::Vec3b(255,255,255), cv::Vec3b(255,0,0), cv::Vec3b(255,255,0), cv::Vec3b(0,255,0), cv::Vec3b(0,0,255),
 //        cv::Vec3b(255,0,255), cv::Vec3b(204,51,51), cv::Vec3b(204,204,51), cv::Vec3b(51,204,51), cv::Vec3b(51,204,204),
 //        cv::Vec3b(51,51,204), cv::Vec3b(204,51,204), cv::Vec3b(204,204,204), cv::Vec3b(153,102,102), cv::Vec3b(153,153,102),
@@ -109,28 +109,20 @@ int main(int argc, const char * argv[])
 //        for (int i = 0; i < 2; ++i) {
 //            for (auto &line : pair.edge[i]) {
 //                for (auto &point : line) {
-//                    img.at<cv::Vec3b>(int(point->point.y), int(point->point.x)) = color[j%30];
+//                    img.at<uchar>(int(point->point.y), int(point->point.x)) = 0;
 //                }
 //            }
-//            cv::imshow("lines", img);
-//            cv::waitKey();
+////            cv::imshow("lines", img);
+////            cv::waitKey();
 //        }
 //        cv::imshow("lines", img);
-//        cv::waitKey();
+//        cv::waitKey(1);
 //        ++j;
 //    }
-//        cv::imshow("edges", img);
-//        cv::waitKey();
-//        img = cv::Mat::zeros(IncidentVector::getImgSize().height, IncidentVector::getImgSize().width, CV_8UC1);
+//        cv::imshow("lines", img);
 //    cv::imwrite("lines.png", img);
-    
-//    if (std::string(argv[7]) == std::string("divide")) {
-//        calib.calibrate(true);
-//    } else {
-//        calib.calibrate(false);
-//    }
-    
-    
+//    return 1;
+//    
 
 //    IncidentVector::initA(0);
 //    calib.calibrate(true);
@@ -142,7 +134,7 @@ int main(int argc, const char * argv[])
 //    calib.save(outname);
 //    calib.calibrate(false);
     
-    if (argc == 4) { // Komagata
+    if (argc == 4 || argc == 1) { // Komagata
         IncidentVector::initA(a_size);
         calib.calibrateNew();
         calib.save(outname);

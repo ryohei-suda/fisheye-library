@@ -75,7 +75,7 @@ void Evaluation::loadData(std::string filename) {
                         points.push_back(new StereographicProjection(point));
                         break;
                     case 1:
-                        //TODO add Perspective projection
+                        points.push_back(new OrthographicProjection(point));
                         break;
                     case 2:
                         points.push_back(new EquidistanceProjection(point));
@@ -128,13 +128,29 @@ void Evaluation::loadData(std::string filename) {
     }
     
     doc.Clear();
+    
+    cv::Point2d p(0,0);
+    switch (IncidentVector::getProjection()) {
+        case 0:
+            iv = new StereographicProjection(p);
+            break;
+        case 1:
+            iv = new OrthographicProjection(p);
+            break;
+        case 2:
+            iv = new EquidistanceProjection(p);
+            break;
+        case 3:
+            iv = new EquisolidAngleProjection(p);
+            break;
+    }
 }
 
 void Evaluation::projectAllPoints()
 {
-    double errors[1000] = {0};
-    int count[1000] = {0};
-//    
+    double errors[1200] = {0};
+    int count[1200] = {0};
+//
 //    for (auto &pair : pairs) {
 //        pair.calcM();
 //        pair.calcNormal();
@@ -178,9 +194,9 @@ void Evaluation::projectAllPoints()
         cv::Mat wn = pair.calcVertical(h, ps);
         
         for (auto &p : pair.edge[0][i]) { // Calculate error
-            double error = M_PI_2 - fabs(acos(p->m.ddot(cv::Point3d(wn))));
+            double error = fabs(p->m.ddot(cv::Point3d(wn)));
             double degree = p->getTheta() * 180 / M_PI;
-            errors[(int)(degree*10)] += error *180/M_PI;
+            errors[(int)(degree*10)] += error;
             ++count[(int)(degree*10)];
         }
     }
@@ -190,20 +206,20 @@ void Evaluation::projectAllPoints()
         for (auto &p : pair.edge[1][i]) {
             ps.push_back( cv::Mat(p->m) );
         }
-        cv::Mat wn = pair.calcVertical(h, ps);
+        cv::Mat wn = pair.calcVertical(v, ps);
         
         for (auto &p : pair.edge[1][i]) { // Calculate error
-            double error = M_PI_2 - fabs(acos(p->m.ddot(cv::Point3d(wn))));
+            double error = fabs(p->m.ddot(cv::Point3d(wn)));
             double degree = p->getTheta() * 180 / M_PI;
-            errors[(int)(degree*10)] += error *180/M_PI;
+            errors[(int)(degree*10)] += error;
             ++count[(int)(degree*10)];
         }
     }
     }
     
-    for (int i = 0; i < 1000; ++i) {
+    for (int i = 0; i < 1200; ++i) {
         if (count[i] != 0) {
-            std::cout << (double)i/10 << " " << errors[i]/count[i] << std::endl;
+            std::cout << (double)i/10 << " " << fabs(M_PI_2-acos(errors[i]/count[i])) *180/M_PI << " " << count[i] << std::endl;
         }
     }
 }

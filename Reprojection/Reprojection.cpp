@@ -8,7 +8,7 @@
 
 #include "Reprojection.h"
 
-int Reprojection::precision = 10;
+int Reprojection::precision = 20;
 
 void Reprojection::loadPrameters(std::string filename)
 {
@@ -92,7 +92,7 @@ void Reprojection::theta2radius()
     t2r.resize(r_size);
     int j = 1; // j/PRECISION: radius
     rad_step = r2t[theta_size-1] / r_size; // 0 ~ theta[end] radian
-    rad_step = 2.2 / r_size; // 130 degree of HFOV
+    rad_step = 2.2 / (sqrt(pow(IncidentVector::getImgSize().height,2) + pow(IncidentVector::getImgSize().width,2))/2) / precision; // 130 degree of HFOV
     for (int i = 0; i < r_size; ++i) {
         double rad = rad_step * i;
         for (; j < theta_size; ++j) {
@@ -109,7 +109,7 @@ void Reprojection::saveTheta2Radius(std::string filename)
     std::ofstream ofs(filename);
     
     for (int i = 0; i < t2r.size(); ++i) {
-        ofs << t2r[i] << ' ' << rad_step * i << ' ' << rad_step * i * 180 / M_PI << std::endl;
+        ofs << std::fixed << std::setprecision(8) << t2r[i] << ' ' << rad_step * i << ' ' << rad_step * i * 180 / M_PI << std::endl;
     }
     
     ofs.close();
@@ -120,14 +120,14 @@ void Reprojection::saveRadius2Theta(std::string filename)
     std::ofstream ofs(filename);
     
     for (int i = 0; i < r2t.size(); ++i) {
-        ofs << (double)i/precision << ' ' << r2t[i] << ' ' << r2t[i] * 180 / M_PI << std::endl;
+        ofs << std::fixed << std::setprecision(8) << (double)i/precision << ' ' << r2t[i] << ' ' << r2t[i] * 180 / M_PI << std::endl;
     }
     
     ofs.close();
 }
 
 
-void Reprojection::calcMaps(int x, int y, double theta_x, double theta_y, double theta_z, double f_, cv::Mat& mapx, cv::Mat& mapy)
+void Reprojection::calcMaps(int step_x, int step_y, double theta_x, double theta_y, double theta_z, double f_, cv::Mat& mapx, cv::Mat& mapy)
 {
     mapx.create(IncidentVector::getImgSize().height, IncidentVector::getImgSize().width, CV_32FC1);
     mapy.create(IncidentVector::getImgSize().height, IncidentVector::getImgSize().width, CV_32FC1);
@@ -146,25 +146,32 @@ void Reprojection::calcMaps(int x, int y, double theta_x, double theta_y, double
                   0,                        0, 1);
     cv::Mat R = Rz * Ry * Rx;
     
-    for (int y_ = 0; y_ < IncidentVector::getImgSize().height; ++y_) { // y
-        for (int x_ = 0; x_ < IncidentVector::getImgSize().width; ++x_) { // x
+    
+    int height = IncidentVector::getImgSize().height;
+    int width = IncidentVector::getImgSize().width;
+    double xd, yd, xn, yn, zn, theta;
+    cv::Mat p3(3,1,CV_64F), real;;
+    p3.at<double>(2) = f_;
+    cv::Point2d final;
+    for (int y_ = 0; y_ < height; ++y_) { // y
+        for (int x_ = 0; x_ < width; ++x_) { // x
             
-            cv::Point2d p2(x_ - IncidentVector::getImgSize().width/2.0 + x, y_ - IncidentVector::getImgSize().height/2.0 + y);
-            cv::Mat p3 = (cv::Mat_<double>(3,1) << p2.x, p2.y, f_);
-            cv::Mat real = 1.0/sqrt(pow(p2.x,2) + pow(p2.y,2) + pow(f_,2)) * R * p3;
+            xd = x_ - width/2.0 + step_x;
+            yd = y_ - height/2.0 + step_y;
+            p3.at<double>(0) = xd;
+            p3.at<double>(1) = yd;
+            real = 1.0/sqrt(pow(xd,2) + pow(yd,2) + pow(f_,2)) * R * p3;
             
-            double x = real.at<double>(0,0);
-            double y = real.at<double>(1,0);
-            double z = real.at<double>(2,0);
-            double theta = atan2(sqrt(1-pow(z,2)), z);
+            xn = real.at<double>(0,0);
+            yn = real.at<double>(1,0);
+            zn = real.at<double>(2,0);
+            theta = atan2(sqrt(1-pow(zn,2)), zn);
             if (t2r.size() <= (int)(theta/rad_step)) {
                 mapx.at<float>(y_,x_) = -1;
                 mapy.at<float>(y_,x_) = -1;
                 continue;
             }
-            cv::Point2d final = IncidentVector::getCenter() + t2r[(int)(theta/rad_step)] / sqrt(1-pow(z,2)) * cv::Point2d(x,y);
-            //            cv::Point2d final = center + f * theta / sqrt(1-pow(z,2))  * cv::Point2d(x,y); // Perspective projection
-            //            cv::Point2d final = center + 2*f*tan(theta/2) / sqrt(1-pow(z,2))  * cv::Point2d(x,y); // Stereo graphic projection
+            final = IncidentVector::getCenter() + t2r[(int)(theta/rad_step)] / sqrt(1-pow(zn,2)) * cv::Point2d(xn,yn);
             
             mapx.at<float>(y_,x_) = final.x;
             mapy.at<float>(y_,x_) = final.y;

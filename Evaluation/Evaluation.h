@@ -20,6 +20,7 @@
 class Evaluation {
 private:
     std::vector<Pair> pairs;
+    IncidentVector *iv;
     
 public:
     void loadData(std::string filename);
