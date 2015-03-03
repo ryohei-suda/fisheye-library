@@ -33,12 +33,9 @@ private:
     } Selection;
     void static onMouse(int event, int x, int y, int flag, void*);
 
-    typedef enum {Four, TwoBW, Two} PType; // 0: 4 patterns, 1: 2 patterns with black and white, 2: 2 patterns
-
     
 public:
     typedef struct {
-        PType type;
         std::string filenames[4];
     } pair;
     std::vector<pair> image_names;
@@ -46,18 +43,16 @@ public:
     LineDetection();
     void loadImageXML(std::string filename);
     cv::Mat makeMask(cv::Mat& white, cv::Mat& black);
-    void display(cv::Size2i size, std::vector<std::vector<cv::Point2f> >& edges, std::string name);
-    cv::Mat detectEdges(cv::Mat& image, cv::Mat& mask);
-    std::vector<std::vector<cv::Point2f> > extractEdges(cv::Mat& image);
-    std::vector<std::vector<cv::Point2f> > clusteringEdges(std::vector<cv::Point2f> points, float r);
+    void display(cv::Size2i size, std::vector<std::vector<cv::Point2f> >& lines, std::string name);
+    std::vector<std::vector<cv::Point2f> > extractPoints(cv::Mat& image);
+    std::vector<std::vector<cv::Point2f> > clusteringPoints(std::vector<cv::Point2f> points, float r);
     void processAllImages();
     void saveParameters(); // Save parameters into XML output
-    void saveTwoSetOfLines(std::vector<std::vector<cv::Point2f> >& first, std::vector<std::vector<cv::Point2f> >& second);
+    void savePair(std::vector<std::vector<cv::Point2f> >& first, std::vector<std::vector<cv::Point2f> >& second);
     void writeXML(std::string filename);
-    std::vector<std::vector<cv::Point2f> > detectValley(cv::Mat &img1, cv::Mat &img2);
     std::vector<std::vector<cv::Point2f> > detectLines(cv::Mat &img1, cv::Mat &img2);
     std::vector<std::vector<std::vector<cv::Point2f> > > loadEdgeXML(std::string filename);
-    void editAllEdges(std::vector<std::vector<std::vector<cv::Point2f> > > edges);
+    void editAllLines(std::vector<std::vector<std::vector<cv::Point2f> > > lines);
 };
 
 #endif
