@@ -1,0 +1,83 @@
+<html><head>
+<link rel="stylesheet" type="text/css" href="http://jsxgraph.uni-bayreuth.de/distrib/jsxgraph.css" />
+<link rel="stylesheet" type="text/css" href="http://imagine.enpc.fr/~moulonp/style.css" /><script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jsxgraph/0.93/jsxgraphcore.js"></script>
+<title>openMVG A Contrario Incremental SFM report.</title>
+</head>
+<h1>openMVG A Contrario Incremental SFM report.</h1>
+<h1>Current directory: images</h1>
+<hr>Dataset info:Number of images: 40<br>------------------<br>-- Tracks Stats --<br> Tracks number: 7551<br> Images Id: <br>0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, <br>------------------<br><table> <tr> <td>TrackLength, </td> <td>Occurrence<td> </tr><tr><td>2</td><td>6686</td></tr><tr><td>3</td><td>660</td></tr><tr><td>4</td><td>150</td></tr><tr><td>5</td><td>39</td></tr><tr><td>6</td><td>9</td></tr><tr><td>7</td><td>7</td></tr></table><br><hr><h1>Essential Matrix.</h1>
+
+-------------------------------<br>-- Robust Essential matrix: <3,8> images: 103_0152.3,103_0153.3<br>-- Threshold: 7.25852<br>-- Resection status: OK<br>-- Nb points used for robust Essential matrix estimation: 225<br>-- Nb points validated by robust estimation: 223<br>-- % points validated: 0.991111<br>-------------------------------<br><h2>Residual of the robust estimation (Initial triangulation). Thresholded at: 7.25852</h2>
+
+<div id="InitialPairTriangulationResiduals" class="jxgbox" style="width:600px; height:300px;"></div>
+<script type="text/javascript">
+var board = JXG.JSXGraph.initBoard('InitialPairTriangulationResiduals', {boundingbox: [-10, 10, 10, -10], axis:true,showCopyright:false});
+board.suspendUpdate();
+var data0= [0.306735,0.19667,0.114781,0.225059,0.440423,0.133972,0.15089,0.373872,0.14071,0.241548,0.331097,0.0937928,0.562191,0.149486,0.113744,1.05414,0.97488,0.418731,0.891661,4.02106e-11,0.16978,0.801045,0.0262817,0.192492,0.0570169,0.758814,0.0911317,0.375403,0.0494401,0.274034,0.99609,0.515534,0.121174,0.151281,0.349195,0.120403,0.496131,0.132652,0.144391,0.511425,0.181395,0.277312,0.882561,0.304171,0.449161,0.0928672,0.11898,0.455799,0.153601,0.180721,0.222027,0.226564,0.267687,0.223682,0.264552,0.0104551,0.347428,0.527931,0.0545372,0.0597796,0.4332,0.232815,0.172033,0.597797,0.339023,0.507292,0.10608,0.729039,0.182913,0.253157,0.296554,0.554614,0.935879,0.0499856,0.552126,0.154265,0.874224,0.264734,0.336185,0.355908,0.183859,0.056869,0.217528,0.340381,0.951606,0.652642,2.59419,0.465228,0.17189,0.156817,0.13073,0.103249,0.52252,0.56214,0.493261,0.068001,0.0952998,0.235796,0.188622,0.631088,0.306645,0.656543,0.336204,0.173345,0.042817,0.654748,4.29366e-11,0.103991,0.157226,0.304116,0.525173,0.0422958,0.119828,1.00106,0.029449,0.113095,0.04323,0.444419,0.1364,0.284727,0.0636501,1.07345,0.144962,0.674996,0.0447425,0.37315,0.484759,0.715068,0.0816781,0.760785,0.590567,0.392112,0.267127,0.604076,0.540213,0.709003,0.48445,0.192044,0.0733521,0.291294,0.138139,0.237325,0.208072,0.22307,0.0871026,0.202109,0.552414,0.0844183,0.0429216,0.053838,0.469264,0.626101,0.662002,0.423868,0.321413,0.638625,0.214973,0.0538838,0.386655,0.130479,0.318881,0.131985,0.277723,3.84719e-11,0.778375,0.959265,0.224865,0.388602,0.249093,0.189188,0.154136,0.381852,0.583973,1.29182,0.634872,0.0231333,0.574727,0.329068,0.704228,0.557886,1.20015,0.633024,0.97325,0.85766,0.394356,1.50813,0.178302,0.179541,1.01989,0.640263,0.432418,0.730831,0.698034,1.22377,0.375498,0.144882,0.963897,0.212666,0.479383,4.5775e-11,0.183913,0.964645,0.729529,0.922595,0.35515,0.616369,0.724501,0.0636139,0.471201,0.65867,1.00367,3.30786e-11,0.469272,0.587019,0.503764,0.851032,0.488747,0.402576,1.10912,0.0787857,1.18596,0.676583,0.410462,0.822584,0.217528,];
+board.createElement('chart', data0, {chartStyle:'point',labels:data0});
+var p1 = board.create('point',[0,7.25852], {fixed:true});
+var p2 = board.create('point',[225,7.25852], {fixed:true});
+var li = board.create('line',[p1,p2], {strokeColor:'00ff00',strokeWidth:2});
+board.unsuspendUpdate();
+board.setBoundingBox([-45,3.11303,270,-0.518839]);
+</script>
+<h2>Histogram of residuals</h2>
+
+<div id="InitialPairTriangulationKeptInfo" class="jxgbox" style="width:600px; height:300px;"></div>
+<script type="text/javascript">
+var board = JXG.JSXGraph.initBoard('InitialPairTriangulationKeptInfo', {boundingbox: [-10, 10, 10, -10], axis:true,showCopyright:false});
+board.suspendUpdate();
+var data0= [0.00000,0.14975,0.29951,0.44926,0.59901,0.74876,0.89852,1.04827,1.19802,1.34777,];
+var data1= [97.00000,104.00000,64.00000,55.00000,47.00000,28.00000,22.00000,18.00000,6.00000,4.00000,];
+board.createElement('chart', [ data0,data1], {chartStyle:'line,point',labels:[ data0,data1]});
+var p2 = board.create('point',[7.25852,0.00000], {fixed:true});
+var p3 = board.create('point',[7.25852,97.00000], {fixed:true});
+var li = board.create('line',[p2,p3], {strokeColor:'00ff00',strokeWidth:2});
+board.unsuspendUpdate();
+board.setBoundingBox([-0.26955,124.00000,1.61733,-16.00000]);
+</script>
+<hr><h1>Resection of Image index: <13> image: 103_0154.3<br> 
+</h1>
+
+-------------------------------<br>-- Robust Resection of camera index: <13> image: 103_0154.3<br>-- Threshold: 92.0265<br>-- Resection status: OK<br>-- Nb points used for Resection: 39<br>-- Nb points validated by robust estimation: 36<br>-- % points validated: 0.923077<br>-------------------------------<br><h2>Residual of the robust estimation (Resection). Thresholded at: 92.0265</h2>
+
+<div id="ResectionResidual_residualPlot_13" class="jxgbox" style="width:600px; height:300px;"></div>
+<script type="text/javascript">
+var board = JXG.JSXGraph.initBoard('ResectionResidual_residualPlot_13', {boundingbox: [-10, 10, 10, -10], axis:true,showCopyright:false});
+board.suspendUpdate();
+var data0= [48.7867,11.985,49.5967,58.4804,61.4766,68.3502,66.2866,35.3541,9.52614,24.7267,10.8842,40.1547,22.8164,8.24391,33.3537,26.5545,27.1273,11.3036,194.875,196.88,170.091,33.7925,44.9194,13.9347,61.2197,97.2801,49.4426,71.6082,15.3544,25.7503,14.5461,28.226,20.4501,18.1341,45.6791,18.2719,22.3535,51.0834,59.4686,];
+board.createElement('chart', data0, {chartStyle:'point',labels:data0});
+var p1 = board.create('point',[0,92.0265], {fixed:true});
+var p2 = board.create('point',[39,92.0265], {fixed:true});
+var li = board.create('line',[p1,p2], {strokeColor:'00ff00',strokeWidth:2});
+board.unsuspendUpdate();
+board.setBoundingBox([-7.8,236.256,46.8,-39.3761]);
+</script>
+
+<div id="ResectionResidual_residualHisto_13" class="jxgbox" style="width:600px; height:300px;"></div>
+<script type="text/javascript">
+var board = JXG.JSXGraph.initBoard('ResectionResidual_residualHisto_13', {boundingbox: [-10, 10, 10, -10], axis:true,showCopyright:false});
+board.suspendUpdate();
+var data0= [0.00000,20.45034,40.90069,61.35103,81.80137,102.25171,122.70206,143.15240,163.60274,184.05309,];
+var data1= [10.00000,11.00000,7.00000,7.00000,0.00000,1.00000,0.00000,0.00000,0.00000,1.00000,];
+board.createElement('chart', [ data0,data1], {chartStyle:'line,point',labels:[ data0,data1]});
+var p2 = board.create('point',[92.02654,0.00000], {fixed:true});
+var p3 = board.create('point',[92.02654,10.00000], {fixed:true});
+var li = board.create('line',[p2,p3], {strokeColor:'00ff00',strokeWidth:2});
+board.unsuspendUpdate();
+board.setBoundingBox([-36.81062,13.20000,220.86370,-2.20000]);
+</script>
+<hr><hr><h1>Structure from Motion process finished.</h1>
+-------------------------------<br>-- Structure from Motion (statistics):<br>-- #Camera calibrated: 3 from 40 input images.<br>-- #Tracks, #3D points: 375<br>-------------------------------<br><h2>Histogram of reprojection-residuals</h2>
+
+<div id="3DtoImageResiduals" class="jxgbox" style="width:600px; height:300px;"></div>
+<script type="text/javascript">
+var board = JXG.JSXGraph.initBoard('3DtoImageResiduals', {boundingbox: [-10, 10, 10, -10], axis:true,showCopyright:false});
+board.suspendUpdate();
+var data0= [0.00065,0.27562,0.55059,0.82557,1.10054,1.37551,1.65048,1.92545,2.20042,2.47539,];
+var data1= [305.00000,281.00000,126.00000,57.00000,12.00000,2.00000,1.00000,0.00000,0.00000,0.00000,];
+board.createElement('chart', [ data0,data1], {chartStyle:'line,point',labels:[ data0,data1]});
+board.unsuspendUpdate();
+board.setBoundingBox([-0.49430,366.00000,2.97034,-61.00000]);
+</script>
+</html>
