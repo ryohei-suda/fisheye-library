@@ -13,7 +13,7 @@
 #include <sstream>
 #include <opencv2/opencv.hpp>
 #include "Pair.h"
-#include "../libs/tinyxml2.h"
+#include "tinyxml2.h"
 #include "Calibration.h"
 
 int main(int argc, const char * argv[])

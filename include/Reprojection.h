@@ -15,11 +15,11 @@
 #include <vector>
 #include <future>
 #include <opencv2/opencv.hpp>
-#include "../libs/IncidentVector.h"
-#include "../libs/OrthographicProjection.h"
-#include "../libs/StereographicProjection.h"
-#include "../libs/EquisolidAngleProjection.h"
-#include "../libs/EquidistanceProjection.h"
+#include "IncidentVector.h"
+#include "OrthographicProjection.h"
+#include "StereographicProjection.h"
+#include "EquisolidAngleProjection.h"
+#include "EquidistanceProjection.h"
 
 class Reprojection {
 public:

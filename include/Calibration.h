@@ -18,13 +18,13 @@
 #include <memory>
 //#include <Eigen/Core>
 #include <opencv2/opencv.hpp>
-#include "../libs/IncidentVector.h"
-#include "../libs/EquidistanceProjection.h"
-#include "../libs/EquisolidAngleProjection.h"
-#include "../libs/StereographicProjection.h"
-#include "../libs/OrthographicProjection.h"
+#include "IncidentVector.h"
+#include "EquidistanceProjection.h"
+#include "EquisolidAngleProjection.h"
+#include "StereographicProjection.h"
+#include "OrthographicProjection.h"
 #include "Pair.h"
-#include "../libs/tinyxml2.h"
+#include "tinyxml2.h"
 
 class Calibration {
   

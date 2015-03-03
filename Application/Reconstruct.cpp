@@ -11,7 +11,7 @@
 #include <opencv2/opencv.hpp>
 //#include <opencv2/nonfree/nonfree.hpp>
 //#include <opencv2/legacy/legacy.hpp>
-#include "../Reprojection/Reprojection.h"
+#include "Reprojection.h"
 #include <sys/stat.h>
 
 int main(int argc, const char * argv[])

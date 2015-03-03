@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stack>
-#include "../libs/tinyxml2.h"
+#include "tinyxml2.h"
 
 class LineDetection
 {
