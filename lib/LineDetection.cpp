@@ -404,11 +404,11 @@ void LineDetection::processAllImages()
             //                    img[i].convertTo(tmp, CV_64F);
             //                    cv::resize(tmp, img[i], cv::Size(), unit, unit, cv::INTER_CUBIC);
         }
-        edges[0] = detectLines(img[0], img[1]);
+        edges[0] = detectCrossPoints(img[0], img[1]);
         //                edges[0] = detectValley(img[0], img[1]);
         display(cv::Size2i(img[0].cols, img[0].rows), edges[0], "edges");
         //                edges[1] = detectValley(img[2], img[3]);
-        edges[1] = detectLines(img[2], img[3]);
+        edges[1] = detectCrossPoints(img[2], img[3]);
         display(cv::Size2i(img[2].cols, img[2].rows), edges[1], "edges");
         
         
@@ -479,7 +479,7 @@ void LineDetection::writeXML(std::string filename)
     output.SaveFile(filename.c_str());
 }
 
-std::vector<std::vector<cv::Point2f> > LineDetection::detectLines(cv::Mat &img1, cv::Mat &img2)
+std::vector<std::vector<cv::Point2f> > LineDetection::detectCrossPoints(cv::Mat &img1, cv::Mat &img2)
 {
     std::vector<std::vector<cv::Point2f> > lines;
     std::vector<cv::Point2f> points;

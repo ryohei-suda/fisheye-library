@@ -50,7 +50,7 @@ public:
     void saveParameters(); // Save parameters into XML output
     void savePair(std::vector<std::vector<cv::Point2f> >& first, std::vector<std::vector<cv::Point2f> >& second);
     void writeXML(std::string filename);
-    std::vector<std::vector<cv::Point2f> > detectLines(cv::Mat &img1, cv::Mat &img2);
+    std::vector<std::vector<cv::Point2f> > detectCrossPoints(cv::Mat &img1, cv::Mat &img2);
     std::vector<std::vector<std::vector<cv::Point2f> > > loadEdgeXML(std::string filename);
     void editAllLines(std::vector<std::vector<std::vector<cv::Point2f> > > lines);
 };
