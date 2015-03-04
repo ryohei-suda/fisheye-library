@@ -8,8 +8,6 @@
 
 #include "LineDetection.h"
 
-int LineDetection::unit = 1;
-
 /*
  * Constructor
  */
@@ -98,13 +96,17 @@ void LineDetection::onMouse(int event, int x, int y, int flag, void* data)
     Selection *selection = (Selection *)data;
     switch(event) {
         case cv::EVENT_LBUTTONDOWN:
-            origin.x = x;
-            origin.y = y;
-            selection->status = 1;
-            break;
+            if (selection->status == 0) {
+                origin.x = x;
+                origin.y = y;
+                selection->status = 1;
+                break;
+            }
         case cv::EVENT_LBUTTONUP:
-            selection->status = 2;
-            break;
+            if (selection->status == 1) {
+                selection->status = 2;
+                break;
+            }
         case cv::EVENT_MOUSEMOVE:
             if (selection->status == 1){
                 if (origin.x > x) {
@@ -158,9 +160,9 @@ void LineDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2f
     
     int min = (img_size.width > img_size.height) ? img_size.height/4 : img_size.width/4;
     
-    while(1) {
+    while(true) {
         // Draw lines
-        show = cv::Mat::zeros(size.height*scale, size.width*scale, CV_8UC3);
+        show = cv::Mat::zeros((int)(size.height*scale), (int)(size.width*scale), CV_8UC3);
         int i = 0;
         for (auto &line : lines) {
             for (auto &point : line) {
@@ -172,7 +174,7 @@ void LineDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2f
         if(selection.status == 0) {
         } else if (selection.status == 1) {
             cv::Mat over = cv::Mat::ones(selection.area.height, selection.area.width, CV_8UC3) * 127;
-            show(selection.area) = cv::max(show(selection.area), over);
+            show(selection.area) += 125;//cv::max(show(selection.area), over);
         } else if (selection.status == 2) {
             for (int i = 0; i < lines.size(); ++i) {
                 bool deleted = false;
@@ -374,32 +376,37 @@ std::vector<std::vector<cv::Point2f> > LineDetection::extractPoints(cv::Mat& ima
 
 std::vector<std::vector<cv::Point2f> > LineDetection::clusteringPoints(std::vector<cv::Point2f> points, float r)
 {
-    std::vector<std::vector<cv::Point2f> > edges;
+    std::vector<std::vector<cv::Point2f> > clusters;
+    cv::Point2f *n, *p;
+    double dist;
     
-    r *= r; // To reduce calcuraion of squre root
+    double r2 = r * r; // Reduce calculation of squre root
+    
+    std::sort(points.begin(), points.end(), compareDistance);
     
     while (!points.empty()) {
-        std::vector<cv::Point2f> new_edge;
-//        std::vector<cv::Point2i>::iterator tmp;
-        new_edge.push_back(points[0]); // Push a point
-        points.erase(points.begin()); // Delete a point
-        for (int i = 0; i < new_edge.size(); ++i) {
-            cv::Point2f *n = &new_edge[i];
-            for (int j = 0; j < points.size(); ++j) {
-                cv::Point2f *p =&points[j];
-                float distance = pow(n->x - p->x, 2) + pow(n->y - p->y, 2);
-                if (distance <= r) { // If a point is includ
-                    new_edge.push_back(*p);
-                    n = &new_edge[i];
+        std::vector<cv::Point2f> new_cluster;
+        new_cluster.push_back(points.back()); // Push a point
+        points.pop_back(); // Delete a point
+        for (int i = 0; i < new_cluster.size(); ++i) {
+            n = &new_cluster[i];
+            dist = sqrt(n->x*n->x + n->y*n->y);
+            for (int j = (int)(points.size()-1); j >= 0; --j) {
+                p = &points[j];
+                if (pow(n->x - p->x,2)+pow(n->y - p->y,2) <= r2) { // If a point is included
+                    new_cluster.push_back(*p);
+                    n = &new_cluster[i];
                     points.erase(points.begin()+j);
-                    j--;
+                }
+                else if (sqrt(p->x*p->x+p->y*p->y) - dist > r) {
+                    break;
                 }
             }
         }
-        edges.push_back(new_edge);
+        clusters.push_back(new_cluster);
     }
     
-    return edges;
+    return clusters;
 }
 
 /*
@@ -476,7 +483,7 @@ void LineDetection::savePair(std::vector<std::vector<cv::Point2f> >& first, std:
         lines1->InsertEndChild(line);
         for (auto &point : lines) {
             tinyxml2::XMLElement *p = output.NewElement("p");
-            sprintf(str, "%f %f", point.x/(float)unit, point.y/(float)unit);
+            sprintf(str, "%.2f %.2f", point.x, point.y);
             p->SetText(str);
             line->InsertEndChild(p);
         }
@@ -487,7 +494,7 @@ void LineDetection::savePair(std::vector<std::vector<cv::Point2f> >& first, std:
         lines2->InsertEndChild(line);
         for (auto &point : lines) {
             tinyxml2::XMLElement *p = output.NewElement("p");
-            sprintf(str, "%f %f", point.x/(float)unit, point.y/(float)unit);
+            sprintf(str, "%.2f %.2f", point.x, point.y);
             p->SetText(str);
             line->InsertEndChild(p);
         }

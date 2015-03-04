@@ -24,7 +24,6 @@ private:
     cv::Size2i img_size;
     std::string projection;
     tinyxml2::XMLDocument output;
-    static int unit; // 1/unit = 0.1 pixel when unit = 10
     
     typedef struct { // For the display function
         cv::Rect area;
@@ -32,7 +31,11 @@ private:
         int width, height;
     } Selection;
     void static onMouse(int event, int x, int y, int flag, void*);
-
+    
+    bool static compareDistance(const cv::Point2f &l, const cv::Point2f &r)
+    {
+        return l.x*l.x + l.y*l.y > r.x*r.x + r.y*r.y;
+    }
     
 public:
     typedef struct {
@@ -53,6 +56,7 @@ public:
     std::vector<std::vector<cv::Point2f> > detectCrossPoints(cv::Mat &img1, cv::Mat &img2);
     std::vector<std::vector<std::vector<cv::Point2f> > > loadEdgeXML(std::string filename);
     void editAllLines(std::vector<std::vector<std::vector<cv::Point2f> > > lines);
+
 };
 
 #endif
