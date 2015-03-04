@@ -96,7 +96,6 @@ void LineDetection::onMouse(int event, int x, int y, int flag, void* data)
 {
     static cv::Point2i origin;
     Selection *selection = (Selection *)data;
-    
     switch(event) {
         case cv::EVENT_LBUTTONDOWN:
             origin.x = x;
@@ -137,8 +136,9 @@ void LineDetection::onMouse(int event, int x, int y, int flag, void* data)
 }
 
 // Display an image with selecting function
-void LineDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2f> >& edges, std::string name)
+void LineDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2f> >& lines, std::string name)
 {
+    float scale = 1.;
     cv::namedWindow(name, CV_WINDOW_NORMAL);
     
     cv::Vec3b color[30] = {cv::Vec3b(255,255,255), cv::Vec3b(255,0,0), cv::Vec3b(255,255,0), cv::Vec3b(0,255,0), cv::Vec3b(0,0,255),
@@ -151,20 +151,20 @@ void LineDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2f
     
     Selection selection;
     selection.status = 0;
-    selection.width = size.width;
-    selection.height = size.height;
+    selection.width = size.width*scale;
+    selection.height = size.height*scale;
     cv::setMouseCallback(name, onMouse, &selection);
-    cv::Mat show = cv::Mat::zeros(size.height, size.width, CV_8UC3);
+    cv::Mat show;
     
     int min = (img_size.width > img_size.height) ? img_size.height/4 : img_size.width/4;
     
     while(1) {
         // Draw lines
-        show = cv::Mat::zeros(size.height, size.width, CV_8UC3);
+        show = cv::Mat::zeros(size.height*scale, size.width*scale, CV_8UC3);
         int i = 0;
-        for (auto &line : edges) {
+        for (auto &line : lines) {
             for (auto &point : line) {
-                show.at<cv::Vec3b>(point.y, point.x) = color[i%30];
+                show.at<cv::Vec3b>((int)(point.y*scale), (int)(point.x*scale)) = color[i%30];
             }
             ++i;
         }
@@ -174,12 +174,12 @@ void LineDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2f
             cv::Mat over = cv::Mat::ones(selection.area.height, selection.area.width, CV_8UC3) * 127;
             show(selection.area) = cv::max(show(selection.area), over);
         } else if (selection.status == 2) {
-            for (int i = 0; i < edges.size(); ++i) {
+            for (int i = 0; i < lines.size(); ++i) {
                 bool deleted = false;
-                std::vector<cv::Point2f> *line = &edges[i];
+                std::vector<cv::Point2f> *line = &lines[i];
                 for (int j = 0; j < line->size(); ++j) {
                     cv::Point2f *point = &line->at(j);
-                    if (point->x >= selection.area.x && point->x <= selection.area.x+selection.area.width && point->y >= selection.area.y && point->y <= selection.area.y+selection.area.height) {
+                    if (point->x*scale >= selection.area.x && point->x*scale <= selection.area.x+selection.area.width && point->y*scale >= selection.area.y && point->y*scale <= selection.area.y+selection.area.height) {
                         line->erase(line->begin()+j);
                         --j;
                         deleted = true;
@@ -194,9 +194,9 @@ void LineDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2f
                         }
                     }
                     
-                    edges.erase(edges.begin()+i);
+                    lines.erase(lines.begin()+i);
                     if (clustered.size() != 0) {
-                        edges.insert(edges.begin()+i, clustered.begin(), clustered.end());
+                        lines.insert(lines.begin()+i, clustered.begin(), clustered.end());
                         i += clustered.size()-1;
                     } else {
                         --i;
@@ -211,12 +211,12 @@ void LineDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2f
             selection.status = 0;
             
         } else if (selection.status == 3) { // Remove one point
-            for (int i = 0; i < edges.size(); ++i) {
+            for (int i = 0; i < lines.size(); ++i) {
                 bool deleted = false;
-                std::vector<cv::Point2f> *line = &edges[i];
+                std::vector<cv::Point2f> *line = &lines[i];
                 for (int j = 0; j < line->size(); ++j) {
                     cv::Point2f *point = &line->at(j);
-                    if (point->x == selection.area.x && point->y == selection.area.y) {
+                    if ((int)(point->x*scale) == selection.area.x && (int)(point->y*scale) == selection.area.y) {
                         line->erase(line->begin()+j);
                         deleted = true;
                         break;
@@ -233,15 +233,14 @@ void LineDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2f
                         }
                     }
                     
-                    edges.erase(edges.begin()+i);
+                    lines.erase(lines.begin()+i);
                     if (clustered.size() != 0) {
-                        edges.insert(edges.begin()+i, clustered.begin(), clustered.end());
+                        lines.insert(lines.begin()+i, clustered.begin(), clustered.end());
                     }
                     break;
                 }
             }
             
-            std::cout << "end test" << std::endl;
             selection.area.x = 0;
             selection.area.y = 0;
             selection.area.height = 0;
@@ -250,9 +249,44 @@ void LineDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2f
         }
         
         cv::imshow(name, show);
-        if(cv::waitKey(30) == 'n'){
+        char key = cv::waitKey(30);
+        if(key == 'n'){
             break;
         }
+        switch (key) {
+            case '1':
+                scale = 1;
+                break;
+            case '2':
+                scale = 2;
+                break;
+            case '3':
+                scale = 3;
+                break;
+            case '4':
+                scale = 4;
+                break;
+            case '5':
+                scale = 5;
+                break;
+            case '6':
+                scale = 6;
+                break;
+            case '7':
+                scale = 7;
+                break;
+            case '8':
+                scale = 8;
+                break;
+            case '9':
+                scale = 9;
+                break;
+            case '0':
+                scale = 10;
+                break;
+        }
+        selection.width = size.width*scale;
+        selection.height = size.height*scale;
     }
     cv::destroyWindow(name);
 }
@@ -362,20 +396,6 @@ std::vector<std::vector<cv::Point2f> > LineDetection::clusteringPoints(std::vect
                 }
             }
         }
-//        int counter = 0;
-//        for (std::vector<cv::Point2i>::iterator c = new_edge.begin(); c != new_edge.end(); c = tmp){ // Cluster
-//            tmp = c + 1;
-//            for (std::vector<cv::Point2i>::iterator p = points.begin(); p != points.end();) { // Points
-//                if (c->x >= p->x-1 && c->x <= p->x+1 && c->y >= p->y-1 && c->y <= p->y+1) { // If a point is included in a cluster
-//                    new_edge.push_back(*p);
-//                    tmp = new_edge.begin() + counter;
-//                    p = points.erase(p);
-//                } else {
-//                    ++p;
-//                }
-//            }
-//            ++counter;
-//        }
         edges.push_back(new_edge);
     }
     
@@ -497,32 +517,41 @@ std::vector<std::vector<cv::Point2f> > LineDetection::detectCrossPoints(cv::Mat 
     }
     cv::Mat diff = img1-img2;
     cv::Mat cross = cv::Mat::zeros(diff.rows, diff.cols, CV_8UC1);
-    cv::Mat cross_inv = cv::Mat::zeros(diff.rows, diff.cols, CV_8UC1);
+//    cv::Mat cross_inv = cv::Mat::zeros(diff.rows, diff.cols, CV_8UC1);
     double thresh = 20;
     bool positive; // Whether previous found cross point was positive
     bool search; // Whether serching
     bool found_first;
     int val_now, val_prev;
+    int count; // Count a number of found crossed points per a row/colmun
     
     // search for x direction
-    for (int y = 0; y < diff.rows; y++) {
+    for (int y = 1; y < diff.rows-1; y++) {
+        count = 0;
         val_prev = diff.at<double>(y,0);
         positive = (val_prev > 0);
         search = false;
         found_first = false;
-        for (int x = 1; x < diff.cols; ++x) {
+        for (int x = 1; x < diff.cols-1; ++x) {
             val_now = diff.at<double>(y, x);
             if (search && (
-                ((val_now <= 0) && positive) || ((val_now >= 0) && !positive))) {// found crossed point
-                if (abs(val_now) < abs(val_prev)) {
-                    cross.at<uchar>(y,x) = 255;
-                } else {
-                    cross.at<uchar>(y,x-1) = 255;
-                }
+                ((val_now <= 0) && positive) || ((val_now >= 0) && !positive))) {// Found crossed point
+//                if (abs(val_now) < abs(val_prev)) {
+//                        cross.at<uchar>(y,x) = 255;
+//                } else {
+//                        cross.at<uchar>(y,x-1) = 255;
+//                    }
+//                }
+            
+//                if(fabs(val_prev-diff.at<double>(y,x+1)) > fabs(diff.at<double>(y-1,x)-diff.at<double>(y+1,x))) {
+                    points.push_back(cv::Point2f(x-fabs(val_now)/(fabs(val_prev)+fabs(val_now)),y));
+                    ++count;
+//                }
+            
                 positive = !positive;
                 search = false;
             }
-            if (!search && abs(val_now) > thresh) {
+            if (!search && fabs(val_now) > thresh) {
                 search = true;
                 if (!found_first) {
                     found_first = true;
@@ -530,26 +559,34 @@ std::vector<std::vector<cv::Point2f> > LineDetection::detectCrossPoints(cv::Mat 
                 }
             }
             val_prev = val_now;
+        }
+        if (!search && (count!=0)) {
+            points.pop_back();
         }
     }
 
     // search for y direction
-    for (int x = 0; x < diff.cols; x++) {
+    for (int x = 1; x < diff.cols-1; x++) {
+        count = 0;
         val_prev = diff.at<double>(0,x);
         positive = (val_prev > 0);
         search = false;
         found_first = false;
-        for (int y = 1; y < diff.rows; ++y) {
+        for (int y = 1; y < diff.rows-1; ++y) {
             val_now = diff.at<double>(y,x);
             if (search && (
               ((val_now <= 0) && positive) || ((val_now >= 0) && !positive))) {// found crossed point
-                if (abs(val_now) < abs(val_prev)) {
-                    if (cross.at<uchar>(y,x) != 255) {
-                        cross.at<uchar>(y,x) = 255;
-                    }
-                } else {
-                    cross.at<uchar>(y-1,x) = 255;
-                }
+//                if (abs(val_now) < abs(val_prev)) {
+//                    if (cross.at<uchar>(y,x) != 255) {
+//                        cross.at<uchar>(y,x) = 255;
+//                    }
+//                } else {
+//                    cross.at<uchar>(y-1,x) = 255;
+//                }
+//                if(fabs(val_prev-diff.at<double>(y+1,x)) > fabs(diff.at<double>(y,x-1)-diff.at<double>(y,x+1))) {
+                    points.push_back(cv::Point2f(x,y-fabs(val_now)/(fabs(val_prev)+fabs(val_now))));
+                    ++count;
+//                }
                 positive = !positive;
                 search = false;
             }
@@ -562,9 +599,28 @@ std::vector<std::vector<cv::Point2f> > LineDetection::detectCrossPoints(cv::Mat 
             }
             val_prev = val_now;
         }
+        if (!search && (count!=0)) {
+            points.pop_back();
+        }
     }
     
-    lines = extractPoints(cross);
+//    int scale = 10;
+//    cv::Mat tmp = cv::Mat::zeros(cross.rows*scale, cross.cols*scale, CV_8UC1);
+//    for (auto &p : points) {
+//        tmp.at<uchar>((int)(p.y*scale+0.5), (int)(p.x*scale+0.5)) = 255;
+//    }
+//    cv::namedWindow("test", CV_WINDOW_NORMAL);
+//    cv::imshow("test", tmp);
+//    diff += 255;
+//    diff *= 0.5;
+//    diff.convertTo(diff, CV_8UC1);
+//    while (cv::waitKey() != 'n') {
+//        cv::imshow("test", diff);
+//        cv::waitKey();
+//        cv::imshow("test", tmp);
+//    }
+    
+    lines = clusteringPoints(points, 2);
     
     // Remove noise
     int min = (img_size.width > img_size.height) ? img_size.height/4 : img_size.width/4;
