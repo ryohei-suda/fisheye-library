@@ -70,17 +70,17 @@ void Pair::calcLine()
 double Pair::calcF()
 {
     
-    cv::Mat h = lineVector[0].row(2).t();
-    std::vector<cv::Mat> ns;
-    for (auto &n : normalVector[1]) {
-        ns.push_back(n.row(2).t());
+    cv::Mat h_ = lineVector[0].row(2).t();
+    cv::Mat v_ = lineVector[1].row(2).t();
+    std::vector<cv::Mat> ns_h, ns_v;
+    for (auto &n : normalVector[0]) {
+        ns_h.push_back(n.row(2).t());
     }
-//    std::cout << "--------------" << std::endl;
-    cv::Mat v = calcVertical(h, ns);
-//    std::cout << h << v << lineVector[1].row(2).t() << std::endl;
-//    std::cout << v << std::endl;
-//    std::cout << acos(v.dot(lineVector[1].row(2).t()))*180/M_PI << std::endl;
-//    std::cout << acos(h.dot(lineVector[1].row(2).t()))*180/M_PI << std::endl;
+    for (auto &n : normalVector[1]) {
+        ns_v.push_back(n.row(2).t());
+    }
+    cv::Mat h = calcVertical(v_, ns_h);
+    cv::Mat v = calcVertical(h_, ns_v);
     double error = 0;
     
     
