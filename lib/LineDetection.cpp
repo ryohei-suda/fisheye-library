@@ -156,25 +156,30 @@ void LineDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2f
     selection.width = size.width*scale;
     selection.height = size.height*scale;
     cv::setMouseCallback(name, onMouse, &selection);
-    cv::Mat show;
+    cv::Mat show, base;
+    bool changed = true;
     
     int min = (img_size.width > img_size.height) ? img_size.height/4 : img_size.width/4;
     
     while(true) {
         // Draw lines
-        show = cv::Mat::zeros((int)(size.height*scale), (int)(size.width*scale), CV_8UC3);
-        int i = 0;
-        for (auto &line : lines) {
-            for (auto &point : line) {
-                show.at<cv::Vec3b>((int)(point.y*scale), (int)(point.x*scale)) = color[i%30];
+        if (changed) {
+            base = cv::Mat::zeros((int)(size.height*scale), (int)(size.width*scale), CV_8UC3);
+            int i = 0;
+            for (auto &line : lines) {
+                for (auto &point : line) {
+                    base.at<cv::Vec3b>((int)(point.y*scale+0.5), (int)(point.x*scale+0.5)) = color[i%30];
+                }
+                ++i;
             }
-            ++i;
+            base.copyTo(show);
         }
-        //        image.copyTo(show);
+        
         if(selection.status == 0) {
         } else if (selection.status == 1) {
-            cv::Mat over = cv::Mat::ones(selection.area.height, selection.area.width, CV_8UC3) * 127;
-            show(selection.area) += 125;//cv::max(show(selection.area), over);
+            base.copyTo(show);
+            show(selection.area) += 125;
+            changed = true;
         } else if (selection.status == 2) {
             for (int i = 0; i < lines.size(); ++i) {
                 bool deleted = false;
@@ -188,6 +193,7 @@ void LineDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2f
                     }
                 }
                 if (deleted) {
+                    changed = true;
                     std::vector<std::vector<cv::Point2f> > clustered = clusteringPoints(*line, 2);
                     for (int k = 0; k < clustered.size(); ++k) {
                         if (clustered[k].size() < min) {
@@ -227,6 +233,7 @@ void LineDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2f
                     }
                 }
                 if (deleted) {
+                    changed = true;
                     std::vector<std::vector<cv::Point2f> > clustered = clusteringPoints(*line, 2);
                     for (int k = 0; k < clustered.size(); ++k) {
                         if (clustered[k].size() < min) {
@@ -248,9 +255,16 @@ void LineDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2f
             selection.area.height = 0;
             selection.area.width = 0;
             selection.status = 0;
+        }  else {
+            changed = false;
         }
         
-        cv::imshow(name, show);
+        if (changed) {
+            cv::imshow(name, show);
+        } else {
+            cv::imshow(name, base);
+        }
+        
         char key = cv::waitKey(30);
         if(key == 'n'){
             break;
@@ -286,6 +300,9 @@ void LineDetection::display(cv::Size2i size, std::vector<std::vector<cv::Point2f
             case '0':
                 scale = 10;
                 break;
+        }
+        if ((int)selection.width != (int)(size.width*scale)) {
+            changed = true;
         }
         selection.width = size.width*scale;
         selection.height = size.height*scale;
