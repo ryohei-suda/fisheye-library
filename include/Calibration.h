@@ -16,6 +16,7 @@
 #include <sstream>
 #include <chrono>
 #include <memory>
+#include <future>
 //#include <Eigen/Core>
 #include <opencv2/opencv.hpp>
 #include "IncidentVector.h"
@@ -28,6 +29,13 @@
 
 class Calibration {
   
+private:
+    static void calcPair(Pair& pair); // For threading
+    static void calcPairCC(Pair& pair); // For threading
+    static double calcF(Pair& pair); // For threading
+    static double calcFc(Pair& pair, int c); // For threading
+    static double calcFcc(Pair& pair, int c1, int c2); // For threading
+    
 public:
     //TODO Remove overlap variables with IncidentVecotr.h
 //    cv::Point2d center;

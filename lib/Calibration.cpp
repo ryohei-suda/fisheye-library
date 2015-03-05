@@ -500,50 +500,118 @@ double Calibration::J3cc(int c1, int c2)
     return j3cc;
 }
 
+double Calibration::calcF(Pair& pair)
+{
+    return pair.calcF();
+}
+
 double Calibration::F()
 {
     double f = 0;
     
+    std::vector<std::future<double>> threads;
     for (auto &pair : edges) {
-            f += pair.calcF();
+        threads.push_back(std::async(std::launch::async, calcF, std::ref(pair)));
+    }
+    for (auto &th : threads) {
+        f += th.get();
     }
     
+//    for (auto &pair : edges) {
+//            f += pair.calcF();
+//    }
+    
     return f;
+}
+
+double Calibration::calcFc(Pair& pair, int c)
+{
+    double fc = 0;
+    for (int i = 0; i < 2; ++i) {
+        std::vector<cv::Mat> w = pair.w[i];
+        std::vector<Pair::C> mc = pair.Mc[i];
+        for (int j = 0; j < w.size(); ++j) {
+            fc += (w[j].t() * mc[j].at(c)).dot(w[j].t());
+        }
+    }
+    return fc;
 }
 
 double Calibration::Fc(int c)
 {
     double fc = 0;
     
+    std::vector<std::future<double>> threads;
     for (auto &pair : edges) {
-        for (int i = 0; i < 2; ++i) {
-            std::vector<cv::Mat> w = pair.w[i];
-            std::vector<Pair::C> mc = pair.Mc[i];
-            for (int j = 0; j < w.size(); ++j) {
-                fc += (w[j].t() * mc[j].at(c)).dot(w[j].t());
-            }
-        }
+        threads.push_back(std::async(std::launch::async, calcFc, std::ref(pair), c));
     }
+    for (auto &th : threads) {
+        fc += th.get();
+    }
+//    for (auto &pair : edges) {
+//        for (int i = 0; i < 2; ++i) {
+//            std::vector<cv::Mat> w = pair.w[i];
+//            std::vector<Pair::C> mc = pair.Mc[i];
+//            for (int j = 0; j < w.size(); ++j) {
+//                fc += (w[j].t() * mc[j].at(c)).dot(w[j].t());
+//            }
+//        }
+//    }
     
     return fc;
 }
 
+double Calibration::calcFcc(Pair& pair, int c1, int c2)
+{
+    double fcc = 0;
+    for (int i = 0; i < 2; ++i) {
+        std::vector<cv::Mat> w = pair.w[i];
+        std::vector<Pair::Cc> mcc = pair.Mcc[i];
+        for (int j = 0; j < w.size(); ++j) {
+            fcc += (w[j].t() * mcc[j].at(c1,c2)).dot(w[j].t());
+        }
+    }
+    return fcc;
+}
 double Calibration::Fcc(int c1, int c2)
 {
     double fcc = 0;
-    
+    std::vector<std::future<double>> threads;
     for (auto &pair : edges) {
-        for (int i = 0; i < 2; ++i) {
-            std::vector<cv::Mat> w = pair.w[i];
-            std::vector<Pair::Cc> mcc = pair.Mcc[i];
-            for (int j = 0; j < w.size(); ++j) {
-                fcc += (w[j].t() * mcc[j].at(c1,c2)).dot(w[j].t());
-            }
-        }
+        threads.push_back(std::async(std::launch::async, calcFcc, std::ref(pair), c1, c2));
     }
+    for (auto &th : threads) {
+        fcc += th.get();
+    }
+//    for (auto &pair : edges) {
+//        for (int i = 0; i < 2; ++i) {
+//            std::vector<cv::Mat> w = pair.w[i];
+//            std::vector<Pair::Cc> mcc = pair.Mcc[i];
+//            for (int j = 0; j < w.size(); ++j) {
+//                fcc += (w[j].t() * mcc[j].at(c1,c2)).dot(w[j].t());
+//            }
+//        }
+//    }
     
     return fcc;
 }
+
+void Calibration::calcPair(Pair &pair)
+{
+    pair.calcM();
+    pair.calcNormal();
+    pair.calcLine();
+}
+void Calibration::calcPairCC(Pair &pair)
+{
+    pair.calcM();
+    pair.calcNormal();
+    pair.calcLine();
+    pair.calcMd();
+    pair.calcMc();
+    pair.calcMcc();
+}
+
 
 void Calibration::calibrateNew()
 {
@@ -551,62 +619,13 @@ void Calibration::calibrateNew()
     double F0;
     double C = 0.0001;
     
+    std::vector<std::thread> threads;
     for (auto &pair : edges) {
-        pair.calcM();
-        pair.calcNormal();
-        pair.calcLine();
+        threads.push_back(std::thread(calcPair, std::ref(pair)));
     }
-    
-//    int count = 0;
-//    for (auto &pair : edges) { // Write to point cloud data file
-//        std::vector<cv::Point3d> points;
-//        
-//        for (int j = 0; j < 1; ++j) {
-//            std::vector<cv::Mat> ns;
-//            for (auto &n : pair.normalVector[1]) {
-//                ns.push_back(n.row(2).t());
-//            }
-//            cv::Mat h = pair.lineVector[0].row(2).t();
-//            cv::Mat v_ = pair.lineVector[1].row(2).t();
-//            cv::Mat v = pair.calcVertical(h, ns);
-//            std::cout << acos(v.dot(v_))*180/M_PI << std::endl;
-//            for (double i = 0.0; i <= 1; i+=0.01){
-//                points.push_back(cv::Point3d(v)*i);
-//            }
-//            for (double i = 0.0; i <= 1; i+=0.01){
-//                points.push_back(cv::Point3d(h)*i);
-//            }
-//            
-//            for (auto &line : pair.edge[j]) {
-//                for (auto &point : line) {
-//                    cv::Point3d m  = point->m;
-//                    points.push_back(m);
-//                }
-//            }
-//        }
-//        
-//        std::ofstream ofs(std::to_string(count) + ".pcd");
-//        ofs << "VERSION .7" << std::endl;
-//        ofs << "FIELDS x y z" << std::endl;
-//        ofs << "SIZE 4 4 4" << std::endl;
-//        ofs << "TYPE F F F" << std::endl;
-//        ofs << "COUNT 1 1 1" << std::endl;
-//        ofs << "WIDTH " << points.size() << std::endl;
-//        ofs << "HEIGHT 1" << std::endl;
-//        ofs << "VIEWPOINT 0 0 0 1 0 0 0" << std::endl;
-//        ofs << "POINTS " << points.size() << std::endl;
-//        ofs << "DATA ascii" << std::endl;
-//        
-//        for (auto &p : points) {
-//            ofs << p.x << " " << p.y << " " << p.z << std::endl;
-//        }
-//        
-//        ofs.close();
-//        
-//        ++count;
-//        
-//    }
-    
+    for (auto &th : threads) {
+        th.join();
+    }
      F0 = F();
     
     std::cout << "F\t" << F0 << std::endl;
@@ -620,13 +639,12 @@ void Calibration::calibrateNew()
         std::vector<double> a = IncidentVector::getA();
         
         // Calculate all derivatives
+        threads.clear();
         for (auto &pair : edges) {
-            pair.calcM();
-            pair.calcNormal();
-            pair.calcLine();
-            pair.calcMd();
-            pair.calcMc();
-            pair.calcMcc();
+            threads.push_back(std::thread(calcPairCC, std::ref(pair)));
+        }
+        for (auto &th : threads) {
+            th.join();
         }
         F();
         
@@ -670,13 +688,12 @@ void Calibration::calibrateNew()
             IncidentVector::setF(f_);
             IncidentVector::setA(a_);
             IncidentVector::setCenter(center_);
+            threads.clear();
             for (auto &pair : edges) {
-                pair.calcM();
-                pair.calcNormal();
-                pair.calcLine();
-//                pair.calcMd();
-//                pair.calcMc();
-//                pair.calcMcc();
+                threads.push_back(std::thread(calcPair, std::ref(pair)));
+            }
+            for (auto &th : threads) {
+                th.join();
             }
             
             F_ =  F();
