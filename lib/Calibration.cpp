@@ -523,75 +523,24 @@ double Calibration::F()
     
     return f;
 }
-
-double Calibration::calcFc(Pair& pair, int c)
-{
-    double fc = 0;
-    for (int i = 0; i < 2; ++i) {
-        std::vector<cv::Mat> w = pair.w[i];
-        std::vector<Pair::C> mc = pair.Mc[i];
-        for (int j = 0; j < w.size(); ++j) {
-            fc += (w[j].t() * mc[j].at(c)).dot(w[j].t());
-        }
-    }
-    return fc;
-}
-
 double Calibration::Fc(int c)
 {
     double fc = 0;
-    
-    std::vector<std::future<double>> threads;
+
     for (auto &pair : edges) {
-        threads.push_back(std::async(std::launch::async, calcFc, std::ref(pair), c));
+        fc += pair.Fc[c];
     }
-    for (auto &th : threads) {
-        fc += th.get();
-    }
-//    for (auto &pair : edges) {
-//        for (int i = 0; i < 2; ++i) {
-//            std::vector<cv::Mat> w = pair.w[i];
-//            std::vector<Pair::C> mc = pair.Mc[i];
-//            for (int j = 0; j < w.size(); ++j) {
-//                fc += (w[j].t() * mc[j].at(c)).dot(w[j].t());
-//            }
-//        }
-//    }
     
     return fc;
 }
 
-double Calibration::calcFcc(Pair& pair, int c1, int c2)
-{
-    double fcc = 0;
-    for (int i = 0; i < 2; ++i) {
-        std::vector<cv::Mat> w = pair.w[i];
-        std::vector<Pair::Cc> mcc = pair.Mcc[i];
-        for (int j = 0; j < w.size(); ++j) {
-            fcc += (w[j].t() * mcc[j].at(c1,c2)).dot(w[j].t());
-        }
-    }
-    return fcc;
-}
 double Calibration::Fcc(int c1, int c2)
 {
     double fcc = 0;
-    std::vector<std::future<double>> threads;
+
     for (auto &pair : edges) {
-        threads.push_back(std::async(std::launch::async, calcFcc, std::ref(pair), c1, c2));
+        fcc += pair.Fcc[c1][c2];
     }
-    for (auto &th : threads) {
-        fcc += th.get();
-    }
-//    for (auto &pair : edges) {
-//        for (int i = 0; i < 2; ++i) {
-//            std::vector<cv::Mat> w = pair.w[i];
-//            std::vector<Pair::Cc> mcc = pair.Mcc[i];
-//            for (int j = 0; j < w.size(); ++j) {
-//                fcc += (w[j].t() * mcc[j].at(c1,c2)).dot(w[j].t());
-//            }
-//        }
-//    }
     
     return fcc;
 }
@@ -610,6 +559,7 @@ void Calibration::calcPairCC(Pair &pair)
     pair.calcMd();
     pair.calcMc();
     pair.calcMcc();
+    pair.calcFcc();
 }
 
 
@@ -619,9 +569,17 @@ void Calibration::calibrateNew()
     double F0;
     double C = 0.0001;
     
+    const int num_cores = std::thread::hardware_concurrency();
     std::vector<std::thread> threads;
+    int num_threads = 0;
     for (auto &pair : edges) {
         threads.push_back(std::thread(calcPair, std::ref(pair)));
+        ++num_threads;
+        if (num_threads == num_cores) {
+            threads[0].join();
+            threads.erase(threads.begin());
+            --num_threads;
+        }
     }
     for (auto &th : threads) {
         th.join();
@@ -640,8 +598,15 @@ void Calibration::calibrateNew()
         
         // Calculate all derivatives
         threads.clear();
+        num_threads = 0;
         for (auto &pair : edges) {
             threads.push_back(std::thread(calcPairCC, std::ref(pair)));
+            ++num_threads;
+            if (num_threads == num_cores) {
+                threads[0].join();
+                threads.erase(threads.begin());
+                --num_threads;
+            }
         }
         for (auto &th : threads) {
             th.join();
@@ -689,8 +654,14 @@ void Calibration::calibrateNew()
             IncidentVector::setA(a_);
             IncidentVector::setCenter(center_);
             threads.clear();
+            num_threads = 0;
             for (auto &pair : edges) {
                 threads.push_back(std::thread(calcPair, std::ref(pair)));
+                if (num_threads == num_cores) {
+                    threads[0].join();
+                    threads.erase(threads.begin());
+                    --num_threads;
+                }
             }
             for (auto &th : threads) {
                 th.join();

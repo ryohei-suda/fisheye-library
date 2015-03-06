@@ -33,8 +33,6 @@ private:
     static void calcPair(Pair& pair); // For threading
     static void calcPairCC(Pair& pair); // For threading
     static double calcF(Pair& pair); // For threading
-    static double calcFc(Pair& pair, int c); // For threading
-    static double calcFcc(Pair& pair, int c1, int c2); // For threading
     
 public:
     //TODO Remove overlap variables with IncidentVecotr.h

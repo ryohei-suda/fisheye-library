@@ -312,6 +312,29 @@ void Pair::calcLc()
     
 }
 
+void Pair::calcFcc()
+{
+    Fc.clear();
+    Fc.resize(IncidentVector::nparam, 0);
+    Fcc.clear();
+    Fcc.resize(IncidentVector::nparam);
+    for (auto &fc : Fcc) {
+        fc.resize(IncidentVector::nparam, 0);
+    }
+    
+    for (int i = 0; i < 2; ++i) {
+        for (int j = 0; j < w[i].size(); ++j) {
+            cv::Mat w_ = w[i].at(j).t();
+            for (int c1 = 0; c1 < IncidentVector::nparam; ++c1) {
+                Fc[c1] += (w_ * Mc[i].at(j).at(c1)).dot(w_);
+                for (int c2 = 0; c2 < IncidentVector::nparam; ++c2) {
+                    Fcc[c1][c2] += (w_ * Mcc[i].at(j).at(c1,c2)).dot(w_);
+                }
+            }
+        }
+    }
+}
+
 void Pair::calcDerivatives()
 {
     calcMd();

@@ -73,6 +73,9 @@ public:
     Cc Ncc[2];
     C lc[2];
     
+    std::vector<double> Fc;
+    std::vector<std::vector<double> > Fcc;
+    
     void calcM();
     
     // n_k and l_g
@@ -86,6 +89,7 @@ public:
     void calcNc();
     void calcNcc();
     void calcLc();
+    void calcFcc();
     void calcDerivatives();
     
     // For new optimization
